@@ -43,7 +43,7 @@ func (_api *Api) Initialize() {
 }
 
 func (_api *Api) Run(addr string) {
-	log.Printf("OTBR Login Server runnint at port %d!", _api.Configs.LoginPort)
+	log.Printf("OTBR Login Server running at port %d!", _api.Configs.LoginPort)
 	log.Fatal(http.ListenAndServe(addr, _api.Router))
 }
 

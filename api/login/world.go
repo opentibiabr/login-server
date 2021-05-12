@@ -1,6 +1,6 @@
 package login
 
-import "awesomeProject/config"
+import "login-server/config"
 
 type World struct {
 	AntiCheatProtection        bool   `json:"anticheatprotection"`

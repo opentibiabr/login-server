@@ -1,14 +1,14 @@
 package api
 
 import (
-	"awesomeProject/api/api_errors"
-	"awesomeProject/api/login"
-	"awesomeProject/config"
-	"awesomeProject/database"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
+	"login-server/api/api_errors"
+	"login-server/api/login"
+	"login-server/config"
+	"login-server/database"
 	"net/http"
 )
 

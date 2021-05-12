@@ -1,9 +1,9 @@
 package database
 
 import (
-	"awesomeProject/api/login"
 	"database/sql"
 	"fmt"
+	"login-server/api/login"
 )
 
 var vocations = []string{"None", "Sorcerer", "Druid", "Paladin", "Knight", "Master Sorcerer", "Elder Druid", "Royal Paladin", "Elite Knight", "Sorcerer Dawnport", "Druid Dawnport", "Paladin Dawnport", "Knight Dawnport"}

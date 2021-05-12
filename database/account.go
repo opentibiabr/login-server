@@ -1,7 +1,7 @@
 package database
 
 import (
-	"awesomeProject/api/login"
+	"login-server/api/login"
 	"crypto/sha1"
 	"database/sql"
 	"fmt"

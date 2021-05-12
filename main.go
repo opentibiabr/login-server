@@ -1,7 +1,7 @@
 package main
 
 import (
-	"awesomeProject/api"
+	"login-server/api"
 )
 
 func main() {

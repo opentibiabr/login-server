@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"awesomeProject/api"
+	"login-server/api"
 	"bytes"
 	"encoding/json"
 	"fmt"

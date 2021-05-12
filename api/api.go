@@ -17,6 +17,8 @@ type Api struct {
 }
 
 func (_api *Api) Initialize() {
+	log.Print("Welcome to OTBR Login Server")
+	log.Print("Loading configurations...")
 	_api.Configs.Load()
 
 	connectionString := fmt.Sprintf(
@@ -34,11 +36,14 @@ func (_api *Api) Initialize() {
 		log.Fatal(err)
 	}
 
+	_api.Configs.Print()
+
 	_api.Router = mux.NewRouter()
 	_api.initializeRoutes()
 }
 
 func (_api *Api) Run(addr string) {
+	log.Printf("OTBR Login Server runnint at port %d!", _api.Configs.LoginPort)
 	log.Fatal(http.ListenAndServe(addr, _api.Router))
 }
 

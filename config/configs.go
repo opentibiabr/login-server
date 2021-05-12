@@ -74,3 +74,18 @@ func (c *Configs) getEnvInt(key string, defaultValue ...int) int {
 
 	return intValue
 }
+
+func (c *Configs) Print() {
+	log.Printf(
+		"Database: %s:%d/%s",
+		c.DBConfigs.Host,
+		c.DBConfigs.Port,
+		c.DBConfigs.Name,
+	)
+	log.Printf(
+		"Connected with %s server (%s:%d)",
+		c.GameServerConfigs.Name,
+		c.GameServerConfigs.IP,
+		c.GameServerConfigs.Port,
+	)
+}

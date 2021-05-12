@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+var vocations = []string{"None", "Sorcerer", "Druid", "Paladin", "Knight", "Master Sorcerer", "Elder Druid", "Royal Paladin", "Elite Knight", "Sorcerer Dawnport", "Druid Dawnport", "Paladin Dawnport", "Knight Dawnport"}
+
 type Players struct {
 	AccountID int
 	Players   []Player
@@ -80,7 +82,7 @@ func (player *Player) ToCharacterPayload() login.CharacterPayload {
 		CharacterInfo: login.CharacterInfo{
 			Name:     player.Name,
 			Level:    player.Level,
-			Vocation: string(rune(player.Vocation)),
+			Vocation: vocations[player.Vocation],
 			IsMale:   player.Sex == 1,
 		},
 		Outfit: login.Outfit{

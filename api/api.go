@@ -16,33 +16,33 @@ type Api struct {
 	Configs config.Configs
 }
 
-func (api *Api) Initialize() {
-	api.Configs.Load()
+func (_api *Api) Initialize() {
+	_api.Configs.Load()
 
 	connectionString := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s",
-		api.Configs.DBConfigs.User,
-		api.Configs.DBConfigs.Pass,
-		api.Configs.DBConfigs.Host,
-		api.Configs.DBConfigs.Port,
-		api.Configs.DBConfigs.Name,
+		_api.Configs.DBConfigs.User,
+		_api.Configs.DBConfigs.Pass,
+		_api.Configs.DBConfigs.Host,
+		_api.Configs.DBConfigs.Port,
+		_api.Configs.DBConfigs.Name,
 	)
 
 	var err error
-	api.DB, err = sql.Open("mysql", connectionString)
+	_api.DB, err = sql.Open("mysql", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	api.Router = mux.NewRouter()
-	api.initializeRoutes()
+	_api.Router = mux.NewRouter()
+	_api.initializeRoutes()
 }
 
-func (api *Api) Run(addr string) {
-	log.Fatal(http.ListenAndServe(addr, api.Router))
+func (_api *Api) Run(addr string) {
+	log.Fatal(http.ListenAndServe(addr, _api.Router))
 }
 
-func (api *Api) initializeRoutes() {
-	api.Router.HandleFunc("/login", api.login).Methods("GET", "POST", "PUT")
-	api.Router.HandleFunc("/login.php", api.login).Methods("GET", "POST", "PUT")
+func (_api *Api) initializeRoutes() {
+	_api.Router.HandleFunc("/login", _api.login).Methods("GET", "POST", "PUT")
+	_api.Router.HandleFunc("/login.php", _api.login).Methods("GET", "POST", "PUT")
 }

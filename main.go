@@ -5,9 +5,7 @@ import (
 )
 
 func main() {
-	a := api.Api{}
-	// You need to set your Username and Password here
-	a.Initialize()
-
-	a.Run(":80")
+	app := api.Api{}
+	app.Initialize()
+	app.Run(":80")
 }

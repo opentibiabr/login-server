@@ -17,7 +17,7 @@ func logLoginErrorAndRespond(w http.ResponseWriter, r *http.Request, error api_e
 	respondWithJSON(w, r, http.StatusOK, error)
 }
 
-func (api *Api) login(w http.ResponseWriter, r *http.Request) {
+func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 	payload, err := validateLoginPayload(r)
 	if err != nil {
 		logErrorAndRespond(w, r, http.StatusBadRequest, err.Error())
@@ -26,7 +26,7 @@ func (api *Api) login(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	acc, apiError := loadAccount(payload, api.DB)
+	acc, apiError := loadAccount(payload, _api.DB)
 	if apiError != nil {
 		logLoginErrorAndRespond(w, r, *apiError)
 		return
@@ -34,13 +34,13 @@ func (api *Api) login(w http.ResponseWriter, r *http.Request) {
 
 	players := database.Players{AccountID: acc.ID}
 
-	err = players.Load(api.DB)
+	err = players.Load(_api.DB)
 	if err != nil {
 		logErrorAndRespond(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, buildLoginResponsePayload(api.Configs, acc, players))
+	logAndRespond(w, r, http.StatusOK, buildLoginResponsePayload(_api.Configs, acc, players))
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {

@@ -90,8 +90,8 @@ func TestGetNonExistentUser(t *testing.T) {
 	var m map[string]string
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["error"] != "User not found" {
-		t.Errorf("Expected the 'error' key of the response to be set to 'User not found'. Got '%s'", m["error"])
+	if m["errors"] != "User not found" {
+		t.Errorf("Expected the 'errors' key of the response to be set to 'User not found'. Got '%s'", m["errors"])
 	}
 }
 

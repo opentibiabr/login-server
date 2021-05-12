@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"github.com/joho/godotenv"
@@ -8,23 +8,24 @@ import (
 )
 
 type Configs struct {
-	LoginPort int
-	DBConfigs
-	GameServerConfigs
+	LoginPort         int
+	DBConfigs         DBConfigs
+	GameServerConfigs GameServerConfigs
 }
 
 type DBConfigs struct {
-	DBHost string
-	DBPort int
-	DBName string
-	DBUser string
-	DBPass string
+	Host string
+	Port int
+	Name string
+	User string
+	Pass string
 }
 
 type GameServerConfigs struct {
-	GameServerPort int
-	GameServerName string
-	GameServerIP   string
+	Port     int
+	Name     string
+	IP       string
+	Location string
 }
 
 func (c *Configs) Load() {
@@ -36,17 +37,18 @@ func (c *Configs) Load() {
 		}
 	}
 
-	c.LoginPort = c.getEnvInt("APP_PORT", 80)
+	c.LoginPort = c.getEnvInt("LOGIN_PORT", 80)
 
-	c.GameServerIP = c.getEnvStr("SERVER_IP", "127.0.0.1")
-	c.GameServerName = c.getEnvStr("SERVER_NAME", "Canary")
-	c.GameServerPort = c.getEnvInt("SERVER_PORT", 7172)
+	c.GameServerConfigs.IP = c.getEnvStr("SERVER_IP", "127.0.0.1")
+	c.GameServerConfigs.Name = c.getEnvStr("SERVER_NAME", "Canary")
+	c.GameServerConfigs.Port = c.getEnvInt("SERVER_PORT", 7172)
+	c.GameServerConfigs.Location = c.getEnvStr("SERVER_LOCATION", "BRA")
 
-	c.DBHost = c.getEnvStr("DB_HOSTNAME", "127.0.0.1")
-	c.DBPort = c.getEnvInt("DB_PORT", 3306)
-	c.DBName = c.getEnvStr("DB_DATABASE", "canary")
-	c.DBPass = c.getEnvStr("DB_PASSWORD", "canary")
-	c.DBUser = c.getEnvStr("DB_USERNAME", "canary")
+	c.DBConfigs.Host = c.getEnvStr("DB_HOSTNAME", "127.0.0.1")
+	c.DBConfigs.Port = c.getEnvInt("DB_PORT", 3306)
+	c.DBConfigs.Name = c.getEnvStr("DB_DATABASE", "canary")
+	c.DBConfigs.Pass = c.getEnvStr("DB_PASSWORD", "canary")
+	c.DBConfigs.User = c.getEnvStr("DB_USERNAME", "canary")
 }
 
 func (c *Configs) getEnvStr(key string, defaultValue ...string) string {

@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 func logResponse(r *http.Request, code int, payload interface{}) {
+	if os.Getenv("LOGIN_SERVER_SILENT") == "true" {
+		return
+	}
 	log.Printf("%s %s %s %d %v\n", r.RemoteAddr, r.Method, r.URL, code, payload)
 }
 

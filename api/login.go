@@ -40,7 +40,7 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, buildLoginResponsePayload(_api.Configs, acc, players))
+	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(_api.Configs, *acc, players))
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
@@ -72,9 +72,9 @@ func loadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, 
 	return &acc, nil
 }
 
-func buildLoginResponsePayload(
+func BuildLoginResponsePayload(
 	configs config.Configs,
-	acc *database.Account,
+	acc database.Account,
 	players database.Players,
 ) login.ResponsePayload {
 	session := acc.GetSession()

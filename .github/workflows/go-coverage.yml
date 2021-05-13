@@ -16,12 +16,12 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          go test `go list ./... | grep -v examples` -coverprofile=coverage.txt -covermode=atomic
+          go test ./tests `go list ./... | grep -v examples` -coverprofile=coverage.txt -covermode=atomic
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v1.0.2
         with:
-          token: {{your codecov token, can be found at https://codecov.io/gh/<github_username>/<repo>/settings/badge}}
+          token: {{ secrets.CODE_COV_TOKEN }}
           file: ./coverage.txt
           flags: unittests
           name: codecov-umbrella

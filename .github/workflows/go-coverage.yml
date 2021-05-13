@@ -2,7 +2,7 @@ name: Go Test Coverage
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ '**' ]
 
 jobs:
   ci:

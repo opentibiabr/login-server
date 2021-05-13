@@ -22,7 +22,9 @@ var a api.Api
 
 func TestMain(m *testing.M) {
 	err := os.Setenv(config.EnvRunSilent, "true")
-	if err != nil {}
+	if err != nil {
+		log.Print("Can't set silent true")
+	}
 
 	a = api.Api{}
 	a.Initialize()

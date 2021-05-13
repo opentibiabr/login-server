@@ -62,7 +62,7 @@ func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
 		}
 
 		limiter := rl.getVisitor(ip)
-		if limiter.Allow() == false {
+		if !limiter.Allow() {
 			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
 			return
 		}

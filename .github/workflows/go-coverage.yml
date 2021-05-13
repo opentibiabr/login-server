@@ -21,7 +21,7 @@ jobs:
       - name: Upload coverage report
         uses: codecov/codecov-action@v1.0.2
         with:
-          token: {{ secrets.CODE_COV_TOKEN }}
+          token: ${{ secrets.CODE_COV_TOKEN }}
           file: ./coverage.txt
           flags: unittests
           name: codecov-umbrella

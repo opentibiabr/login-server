@@ -10,6 +10,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
+const LimitRate = 10
+const LimitBurst = 30
+
 type IPRateLimiter struct {
 	Visitors map[string]*Visitor
 	Mu       *sync.RWMutex
@@ -30,7 +33,7 @@ func (rl *IPRateLimiter) getVisitor(ip string) *rate.Limiter {
 
 	v, exists := rl.Visitors[ip]
 	if !exists {
-		limiter := rate.NewLimiter(10, 30)
+		limiter := rate.NewLimiter(LimitRate, LimitBurst)
 		rl.Visitors[ip] = &Visitor{limiter, time.Now()}
 		return limiter
 	}
@@ -63,7 +66,7 @@ func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
 
 		limiter := rl.getVisitor(ip)
 		if !limiter.Allow() {
-			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+			http.Error(w, http.StatusText( http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}
 

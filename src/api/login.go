@@ -12,6 +12,8 @@ import (
 	"net/http"
 )
 
+const DefaultLoginErrorCode = 3
+
 func logLoginErrorAndRespond(w http.ResponseWriter, r *http.Request, error api_errors.LoginErrorPayload) {
 	logResponse(r, http.StatusOK, error)
 	respondWithJSON(w, r, http.StatusOK, error)
@@ -63,7 +65,7 @@ func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, 
 	acc := database.Account{Email: payload.Email, Password: payload.Password}
 	if err := acc.Authenticate(DB); err != nil {
 		apiError := api_errors.LoginErrorPayload{
-			ErrorCode:    3,
+			ErrorCode:    DefaultLoginErrorCode,
 			ErrorMessage: "Account email or password is not correct.",
 		}
 		return nil, &apiError

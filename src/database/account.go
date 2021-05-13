@@ -42,8 +42,11 @@ func (acc *Account) GetSession() login.Session {
 }
 
 func (acc *Account) GetPremiumTime() int {
+	secondsInADay := 24 * 60 * 60
+	million := int64(1e6)
+
 	if acc.PremDays > 0 {
-		return int(time.Now().UnixNano()/1e6) + acc.PremDays*86400
+		return int(time.Now().UnixNano() / million) + acc.PremDays * secondsInADay
 	}
 	return 0
 }

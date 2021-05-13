@@ -29,6 +29,7 @@ type GameServerConfigs struct {
 }
 
 const EnvTypeKey = "ENV_TYPE"
+const EnvRunSilent = "ENV_RUN_SILENT"
 
 const EnvLoginPortKey = "LOGIN_PORT"
 
@@ -44,27 +45,28 @@ const EnvDBUserKey = "DB_USERNAME"
 const EnvDBPassKey = "DB_PASSWORD"
 
 func (c *Configs) Load() {
-	envType := c.GetEnvStr(EnvTypeKey, "dev")
-
-	if envType == "dev" {
-		godotenv.Load(".env")
+	if IsDevEnvironment() {
+		err := godotenv.Load(".env")
+		if err != nil && !RunSilent() {
+			log.Print("Failed to load '.env' in dev environment, going with default.")
+		}
 	}
 
-	c.LoginPort = c.GetEnvInt(EnvLoginPortKey, 80)
+	c.LoginPort = GetEnvInt(EnvLoginPortKey, 80)
 
-	c.GameServerConfigs.IP = c.GetEnvStr(EnvServerIpKey, "127.0.0.1")
-	c.GameServerConfigs.Name = c.GetEnvStr(EnvServerNameKey, "Canary")
-	c.GameServerConfigs.Port = c.GetEnvInt(EnvServerPortKey, 7172)
-	c.GameServerConfigs.Location = c.GetEnvStr(EnvServerLocationKey, "BRA")
+	c.GameServerConfigs.IP = GetEnvStr(EnvServerIpKey, "127.0.0.1")
+	c.GameServerConfigs.Name = GetEnvStr(EnvServerNameKey, "Canary")
+	c.GameServerConfigs.Port = GetEnvInt(EnvServerPortKey, 7172)
+	c.GameServerConfigs.Location = GetEnvStr(EnvServerLocationKey, "BRA")
 
-	c.DBConfigs.Host = c.GetEnvStr(EnvDBHostKey, "127.0.0.1")
-	c.DBConfigs.Port = c.GetEnvInt(EnvDBPortKey, 3306)
-	c.DBConfigs.Name = c.GetEnvStr(EnvDBNameKey, "canary")
-	c.DBConfigs.User = c.GetEnvStr(EnvDBUserKey, "canary")
-	c.DBConfigs.Pass = c.GetEnvStr(EnvDBPassKey, "canary")
+	c.DBConfigs.Host = GetEnvStr(EnvDBHostKey, "127.0.0.1")
+	c.DBConfigs.Port = GetEnvInt(EnvDBPortKey, 3306)
+	c.DBConfigs.Name = GetEnvStr(EnvDBNameKey, "canary")
+	c.DBConfigs.User = GetEnvStr(EnvDBUserKey, "canary")
+	c.DBConfigs.Pass = GetEnvStr(EnvDBPassKey, "canary")
 }
 
-func (c *Configs) GetEnvStr(key string, defaultValue ...string) string {
+func GetEnvStr(key string, defaultValue ...string) string {
 	value := os.Getenv(key)
 	if len(value) == 0 && len(defaultValue) > 0 {
 		return defaultValue[0]
@@ -73,7 +75,7 @@ func (c *Configs) GetEnvStr(key string, defaultValue ...string) string {
 	return value
 }
 
-func (c *Configs) GetEnvInt(key string, defaultValue ...int) int {
+func GetEnvInt(key string, defaultValue ...int) int {
 	value := os.Getenv(key)
 	if len(value) == 0 && len(defaultValue) > 0 {
 		return defaultValue[0]
@@ -102,4 +104,12 @@ func (c *Configs) Print() {
 		c.GameServerConfigs.Port,
 		c.GameServerConfigs.Location,
 	)
+}
+
+func RunSilent() bool {
+	return len(GetEnvStr(EnvRunSilent, "")) == 0
+}
+
+func IsDevEnvironment() bool {
+	return GetEnvStr(EnvTypeKey, "dev") == "dev"
 }

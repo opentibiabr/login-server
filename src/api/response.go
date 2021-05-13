@@ -2,13 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/opentibiabr/login-server/src/config"
 	"log"
 	"net/http"
 	"os"
 )
 
 func logResponse(r *http.Request, code int, payload interface{}) {
-	if os.Getenv("LOGIN_SERVER_SILENT") == "true" {
+	if os.Getenv(config.EnvRunSilent) == "true" {
 		return
 	}
 	log.Printf("%s %s %s %d %v\n", r.RemoteAddr, r.Method, r.URL, code, payload)
@@ -32,5 +33,9 @@ func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload i
 	response, _ := json.Marshal(payload)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+
+	_,  err := w.Write(response)
+	if err != nil && !config.RunSilent() {
+		log.Print(err.Error())
+	}
 }

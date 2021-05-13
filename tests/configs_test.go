@@ -17,14 +17,13 @@ func TestGetEnvStr(t *testing.T) {
 
 	defaultValue := "default"
 	value := "value"
-	c := config.Configs{}
 
 	os.Setenv(TestKey, value)
-	actualValue := c.GetEnvStr(TestKey, defaultValue)
+	actualValue := config.GetEnvStr(TestKey, defaultValue)
 	a.Equals(value, actualValue)
 
 	os.Setenv(TestKey, defaultValue)
-	actualValue = c.GetEnvStr(TestKey, defaultValue)
+	actualValue = config.GetEnvStr(TestKey, defaultValue)
 	a.Equals(defaultValue, actualValue)
 }
 
@@ -33,9 +32,8 @@ func TestGetEnvStrNotSetGetsDefault(t *testing.T) {
 	os.Unsetenv(TestKey)
 
 	defaultValue := "random_default"
-	c := config.Configs{}
 
-	a.Equals(defaultValue, c.GetEnvStr(TestKey, defaultValue))
+	a.Equals(defaultValue, config.GetEnvStr(TestKey, defaultValue))
 }
 
 func TestGetEnvInt(t *testing.T) {
@@ -44,13 +42,12 @@ func TestGetEnvInt(t *testing.T) {
 
 	defaultValue := 737
 	value := 100
-	c := config.Configs{}
 
 	os.Setenv(TestKey, fmt.Sprintf("%d", value))
-	a.Equals(value, c.GetEnvInt(TestKey, defaultValue))
+	a.Equals(value, config.GetEnvInt(TestKey, defaultValue))
 
 	os.Setenv(TestKey, fmt.Sprintf("%d", defaultValue))
-	a.Equals(defaultValue, c.GetEnvInt(TestKey, defaultValue))
+	a.Equals(defaultValue, config.GetEnvInt(TestKey, defaultValue))
 }
 
 func TestGetEnvIntNotSetGetsDefault(t *testing.T) {
@@ -58,9 +55,8 @@ func TestGetEnvIntNotSetGetsDefault(t *testing.T) {
 	os.Unsetenv(TestKey)
 
 	defaultValue := 333
-	c := config.Configs{}
 
-	value := c.GetEnvInt(TestKey, defaultValue)
+	value := config.GetEnvInt(TestKey, defaultValue)
 	a.Equals(defaultValue, value)
 }
 

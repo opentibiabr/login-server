@@ -11,6 +11,7 @@ import (
 	"github.com/opentibiabr/login-server/src/config"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/tests/testlib"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,7 +21,11 @@ import (
 var a api.Api
 
 func TestMain(m *testing.M) {
-	os.Setenv("LOGIN_SERVER_SILENT", "true")
+	err := os.Setenv(config.EnvRunSilent, "true")
+	if err != nil {
+		log.Print("Can't set silent true")
+	}
+
 	a = api.Api{}
 	a.Initialize()
 	code := m.Run()
@@ -96,7 +101,10 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	response := executeRequest(req)
 
 	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
+	err := json.Unmarshal(response.Body.Bytes(), &m)
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusBadRequest, response.Code)
 	asserter.Equals("Invalid request payload", m["errors"])
@@ -121,7 +129,10 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	response := executeRequest(req)
 
 	var m api_errors.LoginErrorPayload
-	json.Unmarshal(response.Body.Bytes(), &m)
+	err := json.Unmarshal(response.Body.Bytes(), &m)
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusOK, response.Code)
 	asserter.Equals("Account email or password is not correct.", m.ErrorMessage)
@@ -166,7 +177,10 @@ func TestLoginValidCredentials(t *testing.T) {
 	response := executeRequest(req)
 
 	var m login.ResponsePayload
-	json.Unmarshal(response.Body.Bytes(), &m)
+	err := json.Unmarshal(response.Body.Bytes(), &m)
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusOK, response.Code)
 	asserter.Equals(3, count)

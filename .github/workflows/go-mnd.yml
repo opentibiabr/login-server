@@ -1,0 +1,16 @@
+name: Magic number detector
+on:
+  pull_request:
+    branches: [ '**' ]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Run go-mnd
+        uses: tommy-muehle/go-mnd@master
+        with:
+          args: ./...

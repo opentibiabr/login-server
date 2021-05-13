@@ -16,6 +16,9 @@ type Account struct {
 	LastDay  int    `json:"lastday"`
 }
 
+const secondsInADay = 24 * 60 * 60
+const million = 1e6
+
 func (acc *Account) Authenticate(db *sql.DB) error {
 	h := sha1.New()
 	h.Write([]byte(acc.Password))
@@ -43,7 +46,7 @@ func (acc *Account) GetSession() login.Session {
 
 func (acc *Account) GetPremiumTime() int {
 	if acc.PremDays > 0 {
-		return int(time.Now().UnixNano()/1e6) + acc.PremDays*86400
+		return int(time.Now().UnixNano() / million) + acc.PremDays * secondsInADay
 	}
 	return 0
 }

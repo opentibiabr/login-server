@@ -4,17 +4,14 @@ on:
     branches: [ '**' ]
 
 jobs:
-  full_ci:
-    strategy:
-      matrix:
-        go-version: [ 1.16.x ]
-        os: [ubuntu-latest, macos-latest]
-
-    runs-on: ${{ matrix.os }}
-
+  release-linux-amd64:
+    name: release linux/amd64
+    runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: build
-        run: go build -o login-server ./src/
+      - uses: actions/checkout@v2
+      - uses: wangyoucao577/go-release-action@v1.17
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: linux
+          goarch: amd64
+          project_path: ./src/

@@ -36,7 +36,6 @@ func TestGetSession(t *testing.T) {
 
 	acc.PremDays = 0
 	a.False(acc.GetSession().IsPremium)
-	a.False(true)
 }
 
 func TestGetPremiumTime(t *testing.T) {

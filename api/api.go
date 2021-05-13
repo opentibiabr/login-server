@@ -6,8 +6,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"log"
+	"login-server/api/limiter"
 	"login-server/config"
 	"net/http"
+	"sync"
 )
 
 type Api struct {
@@ -34,8 +36,16 @@ func (_api *Api) Initialize() {
 		log.Fatal(err)
 	}
 
+	ipLimiter := &limiter.IPRateLimiter{
+		Visitors: make(map[string]*limiter.Visitor),
+		Mu:       &sync.RWMutex{},
+	}
+
+	ipLimiter.Init()
+
 	_api.Router = mux.NewRouter()
 	_api.initializeRoutes()
+	_api.Router.Use(ipLimiter.Limit)
 }
 
 func (_api *Api) Run(addr string) {

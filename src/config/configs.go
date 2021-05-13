@@ -96,9 +96,10 @@ func (c *Configs) Print() {
 		c.DBConfigs.Name,
 	)
 	log.Printf(
-		"Connected with %s server (%s:%d)",
+		"Connected with %s server %s:%d - %s",
 		c.GameServerConfigs.Name,
 		c.GameServerConfigs.IP,
 		c.GameServerConfigs.Port,
+		c.GameServerConfigs.Location,
 	)
 }

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
-	"login-server/api/api_errors"
-	"login-server/api/login"
-	"login-server/config"
-	"login-server/database"
+	"login-server/src/api/api_errors"
+	"login-server/src/api/login"
+	"login-server/src/config"
+	"login-server/src/database"
 	"net/http"
 )
 

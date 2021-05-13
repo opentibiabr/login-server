@@ -2,7 +2,7 @@ package tests
 
 import (
 	"fmt"
-	"login-server/config"
+	"login-server/src/config"
 	"login-server/tests/testlib"
 	"os"
 	"testing"
@@ -84,9 +84,9 @@ func TestLoad(t *testing.T) {
 	expectedConfigs := config.Configs{
 		LoginPort: 8080,
 		GameServerConfigs: config.GameServerConfigs{
-			IP: defaultString,
-			Name: defaultString,
-			Port: 8080,
+			IP:       defaultString,
+			Name:     defaultString,
+			Port:     8080,
 			Location: defaultString,
 		},
 		DBConfigs: config.DBConfigs{

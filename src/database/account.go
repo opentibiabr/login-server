@@ -4,7 +4,7 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
-	"login-server/api/login"
+	"login-server/src/api/login"
 	"time"
 )
 
@@ -43,7 +43,7 @@ func (acc *Account) GetSession() login.Session {
 
 func (acc *Account) GetPremiumTime() int {
 	if acc.PremDays > 0 {
-		return int(time.Now().UnixNano()/1e6) + acc.PremDays * 86400
+		return int(time.Now().UnixNano()/1e6) + acc.PremDays*86400
 	}
 	return 0
 }

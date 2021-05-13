@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"login-server/api/login"
+	"login-server/src/api/login"
 )
 
 var Vocations = []string{

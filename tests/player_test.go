@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"login-server/api/login"
-	"login-server/database"
+	"login-server/src/api/login"
+	"login-server/src/database"
 	"login-server/tests/testlib"
 	"testing"
 )

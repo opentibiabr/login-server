@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"login-server/api"
+	"login-server/src/api"
 )
 
 func main() {

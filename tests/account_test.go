@@ -2,8 +2,8 @@ package tests
 
 import (
 	"bou.ke/monkey"
-	"login-server/api/login"
-	"login-server/database"
+	"login-server/src/api/login"
+	"login-server/src/database"
 	"login-server/tests/testlib"
 	"testing"
 	"time"
@@ -17,16 +17,16 @@ func TestGetSession(t *testing.T) {
 	})
 
 	expectedSession := login.Session{
-		IsPremium: true,
-		PremiumUntil: 86400,
-		SessionKey: "a\nb",
+		IsPremium:      true,
+		PremiumUntil:   86400,
+		SessionKey:     "a\nb",
 		ShowRewardNews: true,
-		Status: "active",
+		Status:         "active",
 	}
 
 	acc := database.Account{
 		PremDays: 1,
-		Email: "a",
+		Email:    "a",
 		Password: "b",
 	}
 

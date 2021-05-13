@@ -4,11 +4,11 @@ import (
 	"bou.ke/monkey"
 	"bytes"
 	"encoding/json"
-	"login-server/api"
-	"login-server/api/api_errors"
-	"login-server/api/login"
-	"login-server/config"
-	"login-server/database"
+	"login-server/src/api"
+	"login-server/src/api/api_errors"
+	"login-server/src/api/login"
+	"login-server/src/config"
+	"login-server/src/database"
 	"login-server/tests/testlib"
 	"net/http"
 	"net/http/httptest"
@@ -51,16 +51,16 @@ func TestBuildLoginResponsePayload(t *testing.T) {
 	}
 
 	acc := database.Account{
-		ID: 1010,
-		Email: "@test",
+		ID:       1010,
+		Email:    "@test",
 		Password: "@test",
 		PremDays: 1,
-		LastDay: 912481920,
+		LastDay:  912481920,
 	}
 
 	players := database.Players{
 		AccountID: acc.ID,
-		Players: []database.Player{player},
+		Players:   []database.Player{player},
 	}
 
 	payload := api.BuildLoginResponsePayload(a.Configs, acc, players)
@@ -82,7 +82,7 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
-		players database.Players,) login.ResponsePayload {
+		players database.Players) login.ResponsePayload {
 		count++
 		return login.ResponsePayload{}
 	})
@@ -106,7 +106,7 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
-		players database.Players,) login.ResponsePayload {
+		players database.Players) login.ResponsePayload {
 		count++
 		return login.ResponsePayload{}
 	})

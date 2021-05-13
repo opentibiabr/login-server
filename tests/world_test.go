@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"login-server/api/login"
-	"login-server/config"
+	"login-server/src/api/login"
+	"login-server/src/config"
 	"login-server/tests/testlib"
 	"os"
 	"testing"
@@ -24,7 +24,6 @@ func TestLoadWorld(t *testing.T) {
 	os.Setenv(config.EnvDBNameKey, defaultString)
 	os.Setenv(config.EnvDBUserKey, defaultString)
 	os.Setenv(config.EnvDBPassKey, defaultString)
-
 
 	c := config.Configs{}
 	c.Load()

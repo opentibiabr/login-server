@@ -6,8 +6,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"log"
-	"login-server/api/limiter"
-	"login-server/config"
+	"login-server/src/api/limiter"
+	"login-server/src/config"
 	"net/http"
 	"sync"
 )

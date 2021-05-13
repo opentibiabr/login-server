@@ -131,7 +131,8 @@ func TestLoginValidCredentials(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
-		players database.Players,) login.ResponsePayload {
+		players database.Players,
+	) login.ResponsePayload {
 		count++
 		return login.ResponsePayload{}
 	})

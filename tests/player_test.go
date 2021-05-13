@@ -32,17 +32,17 @@ func TestPlayerToCharacterPayload(t *testing.T) {
 	}
 
 	player := database.Player{
-		defaultString,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
-		defaultNumber,
+		Name:       defaultString,
+		Level:      defaultNumber,
+		Sex:        defaultNumber,
+		Vocation:   defaultNumber,
+		LookType:   defaultNumber,
+		LookHead:   defaultNumber,
+		LookBody:   defaultNumber,
+		LookLegs:   defaultNumber,
+		LookFeet:   defaultNumber,
+		LookAddons: defaultNumber,
+		LastLogin:  defaultNumber,
 	}
 
 	character := player.ToCharacterPayload()

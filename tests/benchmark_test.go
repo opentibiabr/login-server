@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 	"sync"
 	"testing"
@@ -11,7 +12,11 @@ var wg sync.WaitGroup
 
 func asynRequest(payload []byte) {
 	_,err := http.Post("http://localhost:80/login", "application/json", bytes.NewBuffer(payload))
-	if err != nil {}
+
+	if err != nil {
+		log.Print("Error on post login")
+	}
+
 	wg.Done()
 }
 

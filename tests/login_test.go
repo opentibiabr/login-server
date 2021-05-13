@@ -11,6 +11,7 @@ import (
 	"github.com/opentibiabr/login-server/src/config"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/tests/testlib"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -99,7 +100,9 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 
 	var m map[string]string
 	err := json.Unmarshal(response.Body.Bytes(), &m)
-	if err != nil {}
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusBadRequest, response.Code)
 	asserter.Equals("Invalid request payload", m["errors"])
@@ -125,7 +128,9 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 
 	var m api_errors.LoginErrorPayload
 	err := json.Unmarshal(response.Body.Bytes(), &m)
-	if err != nil {}
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusOK, response.Code)
 	asserter.Equals("Account email or password is not correct.", m.ErrorMessage)
@@ -171,7 +176,9 @@ func TestLoginValidCredentials(t *testing.T) {
 
 	var m login.ResponsePayload
 	err := json.Unmarshal(response.Body.Bytes(), &m)
-	if err != nil {}
+	if err != nil {
+		log.Print("Error on parse bytes")
+	}
 
 	asserter.Equals(http.StatusOK, response.Code)
 	asserter.Equals(3, count)

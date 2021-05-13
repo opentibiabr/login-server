@@ -25,3 +25,4 @@ jobs:
         uses: guyarb/golang-test-annotations@v0.3.0
         with:
           test-results: test.json
+          package-name: github.com/opentibiabr/login-server

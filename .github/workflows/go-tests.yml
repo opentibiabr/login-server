@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: run tests
-        run: go test ./tests -v
+        run: go test ./tests -v -json ../... > test.json
 
       - name: Annotate tests
         if: always()

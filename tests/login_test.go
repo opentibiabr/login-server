@@ -3,13 +3,14 @@ package tests
 import (
 	"bou.ke/monkey"
 	"bytes"
+	"database/sql"
 	"encoding/json"
-	"login-server/src/api"
-	"login-server/src/api/api_errors"
-	"login-server/src/api/login"
-	"login-server/src/config"
-	"login-server/src/database"
-	"login-server/tests/testlib"
+	"github.com/opentibiabr/login-server/src/api"
+	"github.com/opentibiabr/login-server/src/api/api_errors"
+	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/src/database"
+	"github.com/opentibiabr/login-server/tests/testlib"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -82,7 +83,8 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
-		players database.Players) login.ResponsePayload {
+		players database.Players,
+	) login.ResponsePayload {
 		count++
 		return login.ResponsePayload{}
 	})
@@ -106,7 +108,8 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
-		players database.Players) login.ResponsePayload {
+		players database.Players,
+	) login.ResponsePayload {
 		count++
 		return login.ResponsePayload{}
 	})
@@ -128,6 +131,25 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 
 func TestLoginValidCredentials(t *testing.T) {
 	var count = 0
+
+	account := database.Account{}
+
+	monkey.Patch(database.LoadPlayers, func(
+		DB *sql.DB,
+		players *database.Players,
+	) error {
+		count++
+		return nil
+	})
+
+	monkey.Patch(api.LoadAccount, func(
+		payload *login.RequestPayload,
+		DB *sql.DB,
+	) (*database.Account, *api_errors.LoginErrorPayload) {
+		count++
+		return &account, nil
+	})
+
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		configs config.Configs,
 		acc database.Account,
@@ -139,7 +161,7 @@ func TestLoginValidCredentials(t *testing.T) {
 
 	asserter := testlib.Assert{T: *t}
 
-	payload := []byte(`{"type":"login","email":"@god","password":"@god"}`)
+	payload := []byte(`{"type":"login","email":"@god","password":"2"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
@@ -147,5 +169,5 @@ func TestLoginValidCredentials(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &m)
 
 	asserter.Equals(http.StatusOK, response.Code)
-	asserter.Equals(1, count)
+	asserter.Equals(3, count)
 }

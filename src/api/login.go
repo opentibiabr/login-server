@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
-	"login-server/src/api/api_errors"
-	"login-server/src/api/login"
-	"login-server/src/config"
-	"login-server/src/database"
+	"github.com/opentibiabr/login-server/src/api/api_errors"
+	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/src/database"
 	"net/http"
 )
 
@@ -26,21 +26,21 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	acc, apiError := loadAccount(payload, _api.DB)
+	acc, apiError := LoadAccount(payload, _api.DB)
 	if apiError != nil {
 		logLoginErrorAndRespond(w, r, *apiError)
 		return
 	}
 
-	players := database.Players{AccountID: acc.ID}
+	players := &database.Players{AccountID: acc.ID}
 
-	err = players.Load(_api.DB)
+	err = database.LoadPlayers(_api.DB, players)
 	if err != nil {
 		logErrorAndRespond(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(_api.Configs, *acc, players))
+	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(_api.Configs, *acc, *players))
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
@@ -59,7 +59,7 @@ func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
 	return &payload, nil
 }
 
-func loadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, *api_errors.LoginErrorPayload) {
+func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, *api_errors.LoginErrorPayload) {
 	acc := database.Account{Email: payload.Email, Password: payload.Password}
 	if err := acc.Authenticate(DB); err != nil {
 		apiError := api_errors.LoginErrorPayload{

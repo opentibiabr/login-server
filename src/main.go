@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/opentibiabr/login-server/src/api"
 	"log"
-	"login-server/src/api"
 )
 
 func main() {

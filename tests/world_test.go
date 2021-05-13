@@ -1,9 +1,9 @@
 package tests
 
 import (
-	"login-server/src/api/login"
-	"login-server/src/config"
-	"login-server/tests/testlib"
+	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/tests/testlib"
 	"os"
 	"testing"
 )

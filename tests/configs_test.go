@@ -2,8 +2,8 @@ package tests
 
 import (
 	"fmt"
-	"login-server/src/config"
-	"login-server/tests/testlib"
+	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/tests/testlib"
 	"os"
 	"testing"
 )

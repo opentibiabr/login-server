@@ -5,9 +5,9 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/opentibiabr/login-server/src/api/limiter"
+	"github.com/opentibiabr/login-server/src/config"
 	"log"
-	"login-server/src/api/limiter"
-	"login-server/src/config"
 	"net/http"
 	"sync"
 )

@@ -18,7 +18,7 @@ func BenchmarkApi(b *testing.B) {
 	wg.Add(b.N * 1)
 	b.ResetTimer()
 	b.StopTimer()
-	payload := []byte(`{"type":"login","email":"@god","password":"@god"}`)
+	payload := []byte(`{"type":"login","email":"@god","password":"god"}`)
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
 		go asynRequest(payload)

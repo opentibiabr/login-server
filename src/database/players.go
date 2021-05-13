@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/login"
 )
 
 var Vocations = []string{
@@ -41,7 +41,7 @@ type Player struct {
 	LastLogin  int    `json:"lastlogin"`
 }
 
-func (players *Players) Load(db *sql.DB) error {
+func LoadPlayers(db *sql.DB, players *Players) error {
 	statement := fmt.Sprintf(
 		`SELECT name, level, sex, vocation, looktype, 
 			lookhead, lookbody, looklegs, lookfeet, lookaddons, 

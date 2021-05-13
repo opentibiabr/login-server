@@ -4,7 +4,7 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
-	"login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/login"
 	"time"
 )
 

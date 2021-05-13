@@ -1,6 +1,6 @@
 package login
 
-import "login-server/src/config"
+import "github.com/opentibiabr/login-server/src/config"
 
 type World struct {
 	AntiCheatProtection        bool   `json:"anticheatprotection"`

@@ -1,12 +1,10 @@
-# OTBR login-server
-
-# OTServ Brasil - Login Server
+# OpenTibiaBR - Login Server
 
 [![Discord Channel](https://img.shields.io/discord/528117503952551936.svg?style=flat-square&logo=discord)](https://discord.gg/3NxYnyV)
 [![GitHub issues](https://img.shields.io/github/issues/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/issues)
 [![GitHub pull request](https://img.shields.io/github/issues-pr/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/pulls)
 [![Contributors](https://img.shields.io/github/contributors/opentibiabr/login-server.svg?style=flat-square)](https://github.com/opentibiabr/login-server/graphs/contributors)
-[![GitHub](https://img.shields.io/github/license/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/blob/develop/LICENSE)
+[![GitHub](https://img.shields.io/github/license/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/blob/main/LICENSE)
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/opentibiabr/login-server)
 
@@ -15,7 +13,7 @@ TBD
 
 ## Project
 
-OTServ Brasil - Login Server is a free open source login server developed to connect with canary server, otbr otclient and cip client.
+OpenTibiaBR - Login Server is a free open source login server developed to connect with canary server, otbr otclient and cip client.
 Built in go, supports over 2k calls per second see benchmark below.
 
 Built for linux, windows and macos, fully integrated with github actions and 90%+ test coverage.

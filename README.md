@@ -53,5 +53,3 @@ If you want to sponsor here, join on discord and send a message for one of our a
 
 [![Protected by ServerCore](https://mktsc.servercore.com.br/protectedbyservercore.png)](https://bit.ly/1q2q4de)
 
-[![Supported by OTHispano](https://othispano.com/styles/purplefreak/logo3.png)](https://othispano.com/)
-

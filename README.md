@@ -24,7 +24,7 @@ Every release is available with multi-platform applications for download.
 | Ubuntu         | ![Ubuntu Build](https://github.com/opentibiabr/login-server/actions/workflows/ci-build-ubuntu.yml/badge.svg?branch=main) |
 | Windows        | ![Windows Build](https://github.com/opentibiabr/login-server/actions/workflows/ci-build-windows.yml/badge.svg?branch=main) |
 
-![Workflow](https://github.com/opentibiabr/login-server/actions/workflows/ci-multiplat-release.yml/badge.svg?tag=v1.0.0)
+![Workflow](https://github.com/opentibiabr/login-server/actions/workflows/ci-multiplat-release.yml/badge.svg)
 
 ### Getting **Started**
 

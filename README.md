@@ -60,12 +60,13 @@ You can also download our docker image and apply the environment variables to yo
 
 
 ## Docker
+`docker pull opentibiabr/login-server:latest`<br><br>
 [![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)
 [![Image Size](https://img.shields.io/docker/image-size/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/tags?page=1&ordering=last_updated)
 ![Pulls](https://img.shields.io/docker/pulls/opentibiabr/login-server)
 [![Build](https://img.shields.io/docker/cloud/build/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/builds)
 
-### Issues
+## Issues
 
 We use the [issue tracker on GitHub](https://github.com/opentibiabr/login-server/issues). Everyone who is watching the repository gets notified by e-mail when there is an activity, so be mindful about comments that add no value (e.g. "+1"). 
 
@@ -73,7 +74,7 @@ We are willing to improve the login server with more features, so feel free to c
 
 If you'd need an issue/feature to be prioritized, you should either do it yourself and submit a pull request, or place a bounty.
 
-### Pull requests
+## Pull requests
 
 Before [creating a pull request](https://github.com/opentibiabr/login-server/pulls) please keep in mind:
 
@@ -83,15 +84,15 @@ Before [creating a pull request](https://github.com/opentibiabr/login-server/pul
 * There are people that doesn't play the game on the official server, so explain your changes to help understand what are you changing and why.
 * Avoid opening a Pull Request to just update minor typo or comments. Try attaching those to other PRs with meaningful content.
 
-### Special Thanks
+## Special Thanks
 
 * our partners
 * our crew (majesty, gpedro, eduardo dantas, foot, lucas)
 
-### **Sponsors**
+## **Sponsors**
 
 If you want to sponsor here, join on discord and send a message for one of our administrators.
 
-### Partners
+## Partners
 
 [![Supported by OTServ Brasil](https://raw.githubusercontent.com/otbr/otserv-brasil/main/otbr.png)](https://forums.otserv.com.br)

@@ -6,6 +6,8 @@ on:
     branches: [main]
 
 jobs:
+
+jobs:
   windows-build:
     strategy:
       matrix:

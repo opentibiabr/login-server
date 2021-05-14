@@ -4,7 +4,7 @@ on:
     types: [created]
 
 jobs:
-  release-linux-amd64:
+  release-matrix:
     name: release linux/amd64
     runs-on: ubuntu-latest
     strategy:

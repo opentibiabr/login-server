@@ -2,7 +2,7 @@ package tests
 
 import (
 	"github.com/opentibiabr/login-server/src/api/login"
-	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/src/utils"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -12,18 +12,18 @@ func TestLoadWorld(t *testing.T) {
 	defaultString := "default_string"
 	defaultNumber := "8080"
 
-	os.Setenv(config.EnvLoginPortKey, defaultNumber)
-	os.Setenv(config.EnvServerIpKey, defaultString)
-	os.Setenv(config.EnvServerNameKey, defaultString)
-	os.Setenv(config.EnvServerPortKey, defaultNumber)
-	os.Setenv(config.EnvServerLocationKey, defaultString)
-	os.Setenv(config.EnvDBHostKey, defaultString)
-	os.Setenv(config.EnvDBPortKey, defaultNumber)
-	os.Setenv(config.EnvDBNameKey, defaultString)
-	os.Setenv(config.EnvDBUserKey, defaultString)
-	os.Setenv(config.EnvDBPassKey, defaultString)
+	os.Setenv(utils.EnvLoginPortKey, defaultNumber)
+	os.Setenv(utils.EnvServerIpKey, defaultString)
+	os.Setenv(utils.EnvServerNameKey, defaultString)
+	os.Setenv(utils.EnvServerPortKey, defaultNumber)
+	os.Setenv(utils.EnvServerLocationKey, defaultString)
+	os.Setenv(utils.EnvDBHostKey, defaultString)
+	os.Setenv(utils.EnvDBPortKey, defaultNumber)
+	os.Setenv(utils.EnvDBNameKey, defaultString)
+	os.Setenv(utils.EnvDBUserKey, defaultString)
+	os.Setenv(utils.EnvDBPassKey, defaultString)
 
-	c := config.Configs{}
+	c := utils.Configs{}
 	c.Load()
 
 	expectedWorld := login.World{

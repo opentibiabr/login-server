@@ -6,7 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/opentibiabr/login-server/src/api/limiter"
-	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/src/utils"
 	"log"
 	"net/http"
 	"sync"
@@ -15,7 +15,7 @@ import (
 type Api struct {
 	Router  *mux.Router
 	DB      *sql.DB
-	Configs config.Configs
+	Configs utils.Configs
 }
 
 func (_api *Api) Initialize() {

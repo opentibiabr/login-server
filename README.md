@@ -42,13 +42,14 @@ You can also download our docker image and apply the environment variables to yo
 |`DB_PORT`         | `database port`                   |
 |`DB_PASSWORD`     | `database password`               |
 |`DB_USERNAME`     | `database username`               |
-|`ENV_RUN_SILENT`  | `true/false disables logs`        |
+|`ENV_LOG_LEVEL`   | `verbose/silent defines log level`|
 |`ENV_TYPE`        | `test/dev/prod uses .env if 'dev'`|
 |`LOGIN_PORT`      | `login http port`                 |
 |`SERVER_IP`       | `game server IP address`          |
 |`SERVER_LOCATION` | `game server location`            |
 |`SERVER_NAME`     | `game server name`                |
 |`SERVER_PORT`     | `game server game port`           |
+|`VOCATIONS`       | `game vocation list csv (a,b,c)`  |
 
 **Tests**  
 `go test ./tests -v`

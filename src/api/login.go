@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
-	"github.com/opentibiabr/login-server/src/config"
+	"github.com/opentibiabr/login-server/src/utils"
 	"github.com/opentibiabr/login-server/src/database"
 	"net/http"
 )
@@ -64,18 +64,22 @@ func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
 func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, *api_errors.LoginErrorPayload) {
 	acc := database.Account{Email: payload.Email, Password: payload.Password}
 	if err := acc.Authenticate(DB); err != nil {
-		apiError := api_errors.LoginErrorPayload{
-			ErrorCode:    DefaultLoginErrorCode,
-			ErrorMessage: "Account email or password is not correct.",
+		errorMessage := "Unable to connect to database service."
+		if err == sql.ErrNoRows {
+			errorMessage = "Account email or password is not correct."
 		}
-		return nil, &apiError
+
+		return nil, &api_errors.LoginErrorPayload{
+			ErrorCode:    DefaultLoginErrorCode,
+			ErrorMessage: errorMessage,
+		}
 	}
 
 	return &acc, nil
 }
 
 func BuildLoginResponsePayload(
-	configs config.Configs,
+	configs utils.Configs,
 	acc database.Account,
 	players database.Players,
 ) login.ResponsePayload {

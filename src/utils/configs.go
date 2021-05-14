@@ -1,10 +1,11 @@
-package config
+package utils
 
 import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Configs struct {
@@ -28,8 +29,10 @@ type GameServerConfigs struct {
 	Location string
 }
 
+const EnvLogLevel = "ENV_LOG_LEVEL"
+
 const EnvTypeKey = "ENV_TYPE"
-const EnvRunSilent = "ENV_RUN_SILENT"
+const EnvVocations = "VOCATIONS"
 
 const EnvLoginPortKey = "LOGIN_PORT"
 
@@ -45,10 +48,10 @@ const EnvDBUserKey = "DB_USERNAME"
 const EnvDBPassKey = "DB_PASSWORD"
 
 func (c *Configs) Load() {
-	if IsDevEnvironment() {
+	if !IsProduction() {
 		err := godotenv.Load(".env")
-		if err != nil && !RunSilent() {
-			log.Print("Failed to load '.env' in dev environment, going with default.")
+		if err != nil {
+			Log("Failed to load '.env' in dev environment, going with default.")
 		}
 	}
 
@@ -83,7 +86,7 @@ func GetEnvInt(key string, defaultValue ...int) int {
 
 	intValue, err := strconv.Atoi(value)
 	if err != nil {
-		log.Printf("Invalid integer value for %s", key)
+		Log("Invalid integer value for %s", key)
 		return 0
 	}
 
@@ -106,10 +109,31 @@ func (c *Configs) Print() {
 	)
 }
 
-func RunSilent() bool {
-	return len(GetEnvStr(EnvRunSilent, "")) == 0
+func IsProduction() bool {
+	return GetEnvStr(EnvTypeKey, "development") == "production"
 }
 
-func IsDevEnvironment() bool {
-	return GetEnvStr(EnvTypeKey, "dev") == "dev"
+func GetServerVocations() []string {
+	vocationsStr := GetEnvStr(EnvVocations, "")
+	vocations := strings.Split(vocationsStr, ",")
+
+	if len(vocationsStr) == 0 || len(vocations) == 0 {
+		return []string{
+			"None",
+			"Sorcerer",
+			"Druid",
+			"Paladin",
+			"Knight",
+			"Master Sorcerer",
+			"Elder Druid",
+			"Royal Paladin",
+			"Elite Knight",
+			"Sorcerer Dawnport",
+			"Druid Dawnport",
+			"Paladin Dawnport",
+			"Knight Dawnport",
+		}
+	}
+
+	return vocations
 }

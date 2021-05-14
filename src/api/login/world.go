@@ -1,6 +1,6 @@
 package login
 
-import "github.com/opentibiabr/login-server/src/config"
+import "github.com/opentibiabr/login-server/src/utils"
 
 type World struct {
 	AntiCheatProtection        bool   `json:"anticheatprotection"`
@@ -20,7 +20,7 @@ type World struct {
 	RestrictedStore            bool   `json:"restrictedstore"`
 }
 
-func LoadWorld(configs config.Configs) World {
+func LoadWorld(configs utils.Configs) World {
 	return World{
 		ExternalAddress:            configs.GameServerConfigs.IP,
 		ExternalAddressProtected:   configs.GameServerConfigs.IP,

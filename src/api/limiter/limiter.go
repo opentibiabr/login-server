@@ -1,7 +1,7 @@
 package limiter
 
 import (
-	"log"
+	"github.com/opentibiabr/login-server/src/utils"
 	"net"
 	"net/http"
 	"sync"
@@ -60,7 +60,7 @@ func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			log.Println(err.Error())
+			utils.Log(err.Error())
 			ip = ""
 		}
 

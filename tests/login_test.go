@@ -8,8 +8,8 @@ import (
 	"github.com/opentibiabr/login-server/src/api"
 	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
-	"github.com/opentibiabr/login-server/src/config"
 	"github.com/opentibiabr/login-server/src/database"
+	"github.com/opentibiabr/login-server/src/utils"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"net/http"
@@ -21,11 +21,10 @@ import (
 var a api.Api
 
 func TestMain(m *testing.M) {
-	err := os.Setenv(config.EnvRunSilent, "true")
+	err := os.Setenv(utils.EnvLogLevel, utils.LogLevelSilent)
 	if err != nil {
 		log.Print("Can't set silent true")
 	}
-
 	a = api.Api{}
 	a.Initialize()
 	code := m.Run()
@@ -84,7 +83,7 @@ func TestBuildLoginResponsePayload(t *testing.T) {
 func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	var count = 0
 	monkey.Patch(api.BuildLoginResponsePayload, func(
-		configs config.Configs,
+		configs utils.Configs,
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {
@@ -110,7 +109,7 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	var count = 0
 	monkey.Patch(api.BuildLoginResponsePayload, func(
-		configs config.Configs,
+		configs utils.Configs,
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {
@@ -156,7 +155,7 @@ func TestLoginValidCredentials(t *testing.T) {
 	})
 
 	monkey.Patch(api.BuildLoginResponsePayload, func(
-		configs config.Configs,
+		configs utils.Configs,
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {

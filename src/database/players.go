@@ -4,23 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/utils"
 )
-
-var Vocations = []string{
-	"None",
-	"Sorcerer",
-	"Druid",
-	"Paladin",
-	"Knight",
-	"Master Sorcerer",
-	"Elder Druid",
-	"Royal Paladin",
-	"Elite Knight",
-	"Sorcerer Dawnport",
-	"Druid Dawnport",
-	"Paladin Dawnport",
-	"Knight Dawnport",
-}
 
 type Players struct {
 	AccountID int
@@ -96,7 +81,7 @@ func (player *Player) ToCharacterPayload() login.CharacterPayload {
 		CharacterInfo: login.CharacterInfo{
 			Name:     player.Name,
 			Level:    player.Level,
-			Vocation: Vocations[player.Vocation],
+			Vocation: utils.GetServerVocations()[player.Vocation],
 			IsMale:   player.Sex == 1,
 		},
 		Outfit: login.Outfit{

@@ -6,7 +6,7 @@ COPY go.mod .
 COPY go.sum .
 COPY src ./src
 
-RUN go build -o /bin/login-server ./src/
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /bin/login-server ./src/
 
 FROM alpine:latest
 

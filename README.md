@@ -61,8 +61,8 @@ You can also download our docker image and apply the environment variables to yo
 
 ## Docker
 [![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)
-[![Image Size](https://img.shields.io/docker/image-size/opentibiabr/login-server)](https://hub.docker.com/layers/opentibiabr/login-server/latest/images/sha256-43aead24b157c6f8cca57135e7d727be02b47ce05dab76a5f5de97f74bce082e?context=explore)
-[![Pulls](https://img.shields.io/docker/pulls/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/tags?page=1&ordering=last_updated)
+[![Image Size](https://img.shields.io/docker/image-size/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/tags?page=1&ordering=last_updated)
+![Pulls](https://img.shields.io/docker/pulls/opentibiabr/login-server)
 [![Build](https://img.shields.io/docker/cloud/build/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/builds)
 
 ### Issues

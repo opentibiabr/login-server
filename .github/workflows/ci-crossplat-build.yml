@@ -1,4 +1,4 @@
-name: Golang Build
+name: Cross-platform Build
 on:
   pull_request:
     branches: [ '**' ]

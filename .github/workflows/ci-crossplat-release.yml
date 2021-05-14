@@ -1,4 +1,4 @@
-name: Golang Release
+name: Cross-platform Release
 on:
   release:
     types: [created]

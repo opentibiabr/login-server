@@ -2,7 +2,8 @@ name: build
 on:
   pull_request:
     branches: [ '**' ]
-
+  push:
+    branches: [main]
 jobs:
   mac-build:
     strategy:

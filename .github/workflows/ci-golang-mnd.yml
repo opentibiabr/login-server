@@ -2,6 +2,8 @@ name: Magic number detector
 on:
   pull_request:
     branches: [ '**' ]
+  push:
+    branches: [main]
 jobs:
   magic-number:
     runs-on: ubuntu-latest

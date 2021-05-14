@@ -2,6 +2,8 @@ name: Golang Tests
 on:
   pull_request:
     branches: [ '**' ]
+  push:
+    branches: [main]
   workflow_dispatch:
     branches: [ '**' ]
 

@@ -1,0 +1,17 @@
+name: Cross-platform Build
+on:
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [ 1.16.x ]
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: go build -o login-server ./src/

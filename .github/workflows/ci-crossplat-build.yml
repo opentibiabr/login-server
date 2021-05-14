@@ -1,17 +1,18 @@
-name: Golang Build
+name: Cross-platform Build
 on:
   pull_request:
     branches: [ '**' ]
 
 jobs:
-  full_ci:
+  build:
     strategy:
       matrix:
         go-version: [ 1.16.x ]
-    runs-on: windows-latest
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
         uses: actions/checkout@v2
 
       - name: build
-        run: go build -o login-server.exe ./src/
+        run: go build -o login-server ./src/

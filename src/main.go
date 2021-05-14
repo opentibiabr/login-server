@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/opentibiabr/login-server/src/api"
 	"log"
 )
@@ -15,5 +16,5 @@ func main() {
 	app.Configs.Print()
 	log.Printf("OTBR Login Server running at port %d!", app.Configs.LoginPort)
 
-	app.Run(":80")
+	app.Run(fmt.Sprintf(":%d", app.Configs.LoginPort))
 }

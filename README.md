@@ -8,6 +8,7 @@
 [![GitHub pull request](https://img.shields.io/github/issues-pr/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/pulls)
 [![GitHub issues](https://img.shields.io/github/issues/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/issues)
 
+
 ## Project
 
 OpenTibiaBR - Login Server is a free open source login server developed in golang to enable cipclient and [otclient](https://github.com/opentibiabr/otclient) to connect and login to [canary server](https://github.com/opentibiabr/canary).
@@ -56,6 +57,13 @@ You can also download our docker image and apply the environment variables to yo
 
 **Build**  
 `RUN go build -o TARGET_NAME ./src/`
+
+
+## Docker
+[![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)
+[![Image Size](https://img.shields.io/docker/image-size/opentibiabr/login-server)](https://hub.docker.com/layers/opentibiabr/login-server/latest/images/sha256-43aead24b157c6f8cca57135e7d727be02b47ce05dab76a5f5de97f74bce082e?context=explore)
+[![Pulls](https://img.shields.io/docker/pulls/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/tags?page=1&ordering=last_updated)
+[![Build](https://img.shields.io/docker/cloud/build/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/builds)
 
 ### Issues
 

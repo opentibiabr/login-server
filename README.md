@@ -4,9 +4,10 @@
 [![GitHub issues](https://img.shields.io/github/issues/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/issues)
 [![GitHub pull request](https://img.shields.io/github/issues-pr/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/pulls)
 [![Contributors](https://img.shields.io/github/contributors/opentibiabr/login-server.svg?style=flat-square)](https://github.com/opentibiabr/login-server/graphs/contributors)
-[![GitHub](https://img.shields.io/github/license/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/blob/main/LICENSE)
 
+[![version](https://img.shields.io/badge/version-1.0.0-green)](https://github.com/opentibiabr/login-server/releases)
 ![GitHub repo size](https://img.shields.io/github/repo-size/opentibiabr/login-server)
+[![GitHub](https://img.shields.io/github/license/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/blob/main/LICENSE)
 
 ## Builds
 TBD

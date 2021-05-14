@@ -3,14 +3,12 @@ package tests
 import (
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/config"
-	"github.com/opentibiabr/login-server/tests/testlib"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func TestLoadWorld(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	defaultString := "default_string"
 	defaultNumber := "8080"
 
@@ -40,5 +38,5 @@ func TestLoadWorld(t *testing.T) {
 	}
 	world := login.LoadWorld(c)
 
-	a.Equals(expectedWorld, world)
+	assert.Equal(t, expectedWorld, world)
 }

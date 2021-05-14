@@ -3,13 +3,11 @@ package tests
 import (
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/tests/testlib"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestPlayerToCharacterPayload(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	defaultString := "default_string"
 	defaultNumber := 12
 
@@ -44,8 +42,7 @@ func TestPlayerToCharacterPayload(t *testing.T) {
 		LookAddons: defaultNumber,
 		LastLogin:  defaultNumber,
 	}
-
 	character := player.ToCharacterPayload()
 
-	a.Equals(expectedCharacterPayload, character)
+	assert.Equal(t, expectedCharacterPayload, character)
 }

@@ -2,3 +2,4 @@
 *.rar
 .idea
 bin
+vendor

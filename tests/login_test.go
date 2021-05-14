@@ -10,7 +10,7 @@ import (
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/config"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/tests/testlib"
+	"github.com/stretchr/testify/assert"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -40,8 +40,6 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 }
 
 func TestBuildLoginResponsePayload(t *testing.T) {
-	asserter := testlib.Assert{T: *t}
-
 	player := database.Player{
 		Name:       "Test",
 		Level:      12,
@@ -76,11 +74,11 @@ func TestBuildLoginResponsePayload(t *testing.T) {
 
 	expectedWorld := login.LoadWorld(a.Configs)
 
-	asserter.Equals(expectedSession, payload.Session)
-	asserter.Equals(1, len(payload.PlayData.Worlds))
-	asserter.Equals(expectedWorld, payload.PlayData.Worlds[0])
-	asserter.Equals(1, len(payload.PlayData.Characters))
-	asserter.Equals(player.ToCharacterPayload(), payload.PlayData.Characters[0])
+	assert.Equal(t, expectedSession, payload.Session)
+	assert.Equal(t, 1, len(payload.PlayData.Worlds))
+	assert.Equal(t, expectedWorld, payload.PlayData.Worlds[0])
+	assert.Equal(t, 1, len(payload.PlayData.Characters))
+	assert.Equal(t, player.ToCharacterPayload(), payload.PlayData.Characters[0])
 }
 
 func TestLoginInvalidPayloadReturn400(t *testing.T) {
@@ -94,8 +92,6 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 		return login.ResponsePayload{}
 	})
 
-	asserter := testlib.Assert{T: *t}
-
 	payload := []byte(`{"type"="login"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -106,9 +102,9 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 		log.Print("Error on parse bytes")
 	}
 
-	asserter.Equals(http.StatusBadRequest, response.Code)
-	asserter.Equals("Invalid request payload", m["errors"])
-	asserter.Equals(0, count)
+	assert.Equal(t, http.StatusBadRequest, response.Code)
+	assert.Equal(t, "Invalid request payload", m["errors"])
+	assert.Equal(t, 0, count)
 }
 
 func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
@@ -122,8 +118,6 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 		return login.ResponsePayload{}
 	})
 
-	asserter := testlib.Assert{T: *t}
-
 	payload := []byte(`{"type":"login"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -134,10 +128,10 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 		log.Print("Error on parse bytes")
 	}
 
-	asserter.Equals(http.StatusOK, response.Code)
-	asserter.Equals("Account email or password is not correct.", m.ErrorMessage)
-	asserter.Equals(3, m.ErrorCode)
-	asserter.Equals(0, count)
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t, "Account email or password is not correct.", m.ErrorMessage)
+	assert.Equal(t, 3, m.ErrorCode)
+	assert.Equal(t, 0, count)
 }
 
 func TestLoginValidCredentials(t *testing.T) {
@@ -170,8 +164,6 @@ func TestLoginValidCredentials(t *testing.T) {
 		return login.ResponsePayload{}
 	})
 
-	asserter := testlib.Assert{T: *t}
-
 	payload := []byte(`{"type":"login","email":"@god","password":"2"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -182,6 +174,6 @@ func TestLoginValidCredentials(t *testing.T) {
 		log.Print("Error on parse bytes")
 	}
 
-	asserter.Equals(http.StatusOK, response.Code)
-	asserter.Equals(3, count)
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t, 3, count)
 }

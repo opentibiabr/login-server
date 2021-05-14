@@ -1,40 +1,78 @@
 # OpenTibiaBR - Login Server
 
-[![Discord Channel](https://img.shields.io/discord/528117503952551936.svg?style=flat-square&logo=discord)](https://discord.gg/3NxYnyV)
-[![GitHub issues](https://img.shields.io/github/issues/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/issues)
-[![GitHub pull request](https://img.shields.io/github/issues-pr/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/pulls)
-[![Contributors](https://img.shields.io/github/contributors/opentibiabr/login-server.svg?style=flat-square)](https://github.com/opentibiabr/login-server/graphs/contributors)
-[![GitHub](https://img.shields.io/github/license/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/blob/main/LICENSE)
-
+[![Version](https://img.shields.io/github/v/release/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/releases/latest)
+![Go](https://img.shields.io/github/go-mod/go-version/opentibiabr/login-server)
 ![GitHub repo size](https://img.shields.io/github/repo-size/opentibiabr/login-server)
 
-## Builds
-TBD
+[![Discord Channel](https://img.shields.io/discord/528117503952551936.svg?style=flat-square&logo=discord)](https://discord.gg/3NxYnyV)
+[![GitHub pull request](https://img.shields.io/github/issues-pr/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/pulls)
+[![GitHub issues](https://img.shields.io/github/issues/opentibiabr/login-server)](https://github.com/opentibiabr/login-server/issues)
 
 ## Project
 
-OpenTibiaBR - Login Server is a free open source login server developed to connect with canary server, otbr otclient and cip client.
-Built in go, supports over 2k calls per second see benchmark below.
+OpenTibiaBR - Login Server is a free open source login server developed in golang to enable cipclient and [otclient](https://github.com/opentibiabr/otclient) to connect and login to [canary server](https://github.com/opentibiabr/canary).
 
-Built for linux, windows and macos, fully integrated with github actions and 90%+ test coverage.
+Current version supports only http login, through `/login` or `/login.php` routes.
+
+The project is fully covered by tests and supports multi-platform build.
+Every release is available with multi-platform applications for download.
+
+## Builds
+| Platform       | Build        |
+| :------------- | :----------: |
+| MacOS          | ![MacOS Build](https://github.com/opentibiabr/login-server/actions/workflows/ci-build-macos.yml/badge.svg?branch=main)   |
+| Ubuntu         | ![Ubuntu Build](https://github.com/opentibiabr/login-server/actions/workflows/ci-build-ubuntu.yml/badge.svg?branch=main) |
+| Windows        | ![Windows Build](https://github.com/opentibiabr/login-server/actions/workflows/ci-build-windows.yml/badge.svg?branch=main) |
+
+![Workflow](https://github.com/opentibiabr/login-server/actions/workflows/ci-multiplat-release.yml/badge.svg?tag=v1.0.0)
 
 ### Getting **Started**
 
-TBD
+To run it, simply download the latest release and define your environment variables.
+You can set environment type as 'dev' if you want to use a '.env' file (store it in the same folder of the login server).
+
+You can also download our docker image and apply the environment variables to your container.
+
+**Enviroment Variables**
+
+|       NAME       |            HOW TO USE             |
+| :-------------- | :--------------------------------- |
+|`DB_DATABASE`     | `database default database name`  |
+|`DB_HOSTNAME`     | `database host`                   |
+|`DB_PORT`         | `database port`                   |
+|`DB_PASSWORD`     | `database password`               |
+|`DB_USERNAME`     | `database username`               |
+|`ENV_RUN_SILENT`  | `true/false disables logs`        |
+|`ENV_TYPE`        | `test/dev/prod uses .env if 'dev'`|
+|`LOGIN_PORT`      | `login http port`                 |
+|`SERVER_IP`       | `game server IP address`          |
+|`SERVER_LOCATION` | `game server location`            |
+|`SERVER_NAME`     | `game server name`                |
+|`SERVER_PORT`     | `game server game port`           |
+
+**Tests**  
+`go test ./tests -v`
+
+**Build**  
+`RUN go build -o TARGET_NAME ./src/`
 
 ### Issues
 
-We use the [issue tracker on GitHub](https://github.com/opentibiabr/login-server/issues). Keep in mind that everyone who is watching the repository gets notified by e-mail when there is an activity, so be thoughtful and avoid writing comments that aren't meant for an issue (e.g. "+1"). If you'd like for an issue to be fixed faster, you should either fix it yourself and submit a pull request, or place a bounty on the issue.
+We use the [issue tracker on GitHub](https://github.com/opentibiabr/login-server/issues). Everyone who is watching the repository gets notified by e-mail when there is an activity, so be mindful about comments that add no value (e.g. "+1"). 
+
+We are willing to improve the login server with more features, so feel free to create issues with features requests and ideas, only bug fixes.
+
+If you'd need an issue/feature to be prioritized, you should either do it yourself and submit a pull request, or place a bounty.
 
 ### Pull requests
 
 Before [creating a pull request](https://github.com/opentibiabr/login-server/pulls) please keep in mind:
 
-* Do not send Pull Request changing the map, as we can't review the changes it's better to use our [Discord](https://discord.gg/3NxYnyV) to talk about or send the map changes to the responsible for updating it.
-* Focus on fixing only one thing, mixing too much things on the same Pull Request make it harder to review, harder to test and if we need to revert the change it will remove other things together.
-* Follow the project indentation, if your editor support you can use the [editorconfig](https://editorconfig.org/) to automatic configure the indentation.
+* Set one single scope in your pull request. Focus help us review and things to ship faster. Too many things on the same Pull Request make it harder to review, harder to test and hard to move on.
+* Add tests. Pull Requests without tests **won't** be approved.
+* Your code must follow go [standard golang format patterns](https://golang.org/doc/effective_go#formatting).
 * There are people that doesn't play the game on the official server, so explain your changes to help understand what are you changing and why.
-* Avoid opening a Pull Request to just update one line of an xml file.
+* Avoid opening a Pull Request to just update minor typo or comments. Try attaching those to other PRs with meaningful content.
 
 ### Special Thanks
 
@@ -48,6 +86,3 @@ If you want to sponsor here, join on discord and send a message for one of our a
 ### Partners
 
 [![Supported by OTServ Brasil](https://raw.githubusercontent.com/otbr/otserv-brasil/main/otbr.png)](https://forums.otserv.com.br)
-
-[![Protected by ServerCore](https://mktsc.servercore.com.br/protectedbyservercore.png)](https://bit.ly/1q2q4de)
-

@@ -1,4 +1,4 @@
-name: Golang Build
+name: Golang Release
 on:
   release:
     types: [created]

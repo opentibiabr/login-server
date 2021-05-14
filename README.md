@@ -29,7 +29,7 @@ Every release is available with multi-platform applications for download.
 ### Getting **Started**
 
 To run it, simply download the latest release and define your environment variables.
-You can set environment type as 'dev' if you want to use a '.env' file (store it in the same folder of the login server).
+You can set environment type as `dev` if you want to use a `.env` file (store it in the same folder of the login server).
 
 You can also download our docker image and apply the environment variables to your container.
 

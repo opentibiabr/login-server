@@ -1,4 +1,4 @@
-name: Multi-platform Release
+name: release
 on:
   release:
     types: [created]

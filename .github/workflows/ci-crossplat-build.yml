@@ -15,4 +15,4 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build
-        run: go build login-server ./src/
+        run: go build -o login-server ./src/

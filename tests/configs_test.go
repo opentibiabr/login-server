@@ -3,7 +3,7 @@ package tests
 import (
 	"fmt"
 	"github.com/opentibiabr/login-server/src/config"
-	"github.com/opentibiabr/login-server/tests/testlib"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -11,8 +11,6 @@ import (
 const TestKey = "TEST_KEY"
 
 func TestGetEnvStr(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	os.Unsetenv(TestKey)
 
 	defaultValue := "default"
@@ -20,49 +18,44 @@ func TestGetEnvStr(t *testing.T) {
 
 	os.Setenv(TestKey, value)
 	actualValue := config.GetEnvStr(TestKey, defaultValue)
-	a.Equals(value, actualValue)
+	assert.Equal(t, value, actualValue)
 
 	os.Setenv(TestKey, defaultValue)
 	actualValue = config.GetEnvStr(TestKey, defaultValue)
-	a.Equals(defaultValue, actualValue)
+	assert.Equal(t, defaultValue, actualValue)
 }
 
 func TestGetEnvStrNotSetGetsDefault(t *testing.T) {
-	a := testlib.Assert{T: *t}
 	os.Unsetenv(TestKey)
 
 	defaultValue := "random_default"
 
-	a.Equals(defaultValue, config.GetEnvStr(TestKey, defaultValue))
+	assert.Equal(t, defaultValue, config.GetEnvStr(TestKey, defaultValue))
 }
 
 func TestGetEnvInt(t *testing.T) {
-	a := testlib.Assert{T: *t}
 	os.Unsetenv(TestKey)
 
 	defaultValue := 737
 	value := 100
 
 	os.Setenv(TestKey, fmt.Sprintf("%d", value))
-	a.Equals(value, config.GetEnvInt(TestKey, defaultValue))
+	assert.Equal(t, value, config.GetEnvInt(TestKey, defaultValue))
 
 	os.Setenv(TestKey, fmt.Sprintf("%d", defaultValue))
-	a.Equals(defaultValue, config.GetEnvInt(TestKey, defaultValue))
+	assert.Equal(t, defaultValue, config.GetEnvInt(TestKey, defaultValue))
 }
 
 func TestGetEnvIntNotSetGetsDefault(t *testing.T) {
-	a := testlib.Assert{T: *t}
 	os.Unsetenv(TestKey)
 
 	defaultValue := 333
 
 	value := config.GetEnvInt(TestKey, defaultValue)
-	a.Equals(defaultValue, value)
+	assert.Equal(t, defaultValue, value)
 }
 
 func TestLoad(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	defaultString := "default_string"
 	defaultNumber := "8080"
 
@@ -97,5 +90,5 @@ func TestLoad(t *testing.T) {
 	c := config.Configs{}
 	c.Load()
 
-	a.Equals(expectedConfigs, c)
+	assert.Equal(t, expectedConfigs, c)
 }

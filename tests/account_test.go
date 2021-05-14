@@ -4,14 +4,12 @@ import (
 	"bou.ke/monkey"
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/tests/testlib"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
 func TestGetSession(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	monkey.Patch(time.Now, func() time.Time {
 		return time.Unix(0, 0)
 	})
@@ -32,25 +30,23 @@ func TestGetSession(t *testing.T) {
 
 	session := acc.GetSession()
 
-	a.Equals(expectedSession, session)
+	assert.Equal(t, expectedSession, session)
 
 	acc.PremDays = 0
-	a.False(acc.GetSession().IsPremium)
+	assert.False(t, acc.GetSession().IsPremium)
 }
 
 func TestGetPremiumTime(t *testing.T) {
-	a := testlib.Assert{T: *t}
-
 	monkey.Patch(time.Now, func() time.Time {
 		return time.Unix(1, 0)
 	})
 
 	acc := database.Account{PremDays: -1000}
-	a.Equals(0, acc.GetPremiumTime())
+	assert.Equal(t, 0, acc.GetPremiumTime())
 
 	acc = database.Account{PremDays: 0}
-	a.Equals(0, acc.GetPremiumTime())
+	assert.Equal(t, 0, acc.GetPremiumTime())
 
 	acc = database.Account{PremDays: 1}
-	a.Equals(87400, acc.GetPremiumTime())
+	assert.Equal(t, 87400, acc.GetPremiumTime())
 }

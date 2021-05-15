@@ -2,7 +2,8 @@ package tests
 
 import (
 	"github.com/opentibiabr/login-server/src/api"
-	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"testing"
@@ -15,10 +16,9 @@ const defaultNumberStr = "8080"
 const defaultNumber = 8080
 
 func TestMain(m *testing.M) {
-	err := os.Setenv(configs.EnvLogLevel, configs.LogLevelSilent)
-	if err != nil {
-		log.Print("Can't set silent true")
-	}
+	/* Disable application logs */
+	logger.Init(logrus.PanicLevel)
+
 	a = api.Api{}
 	a.Initialize()
 	code := m.Run()

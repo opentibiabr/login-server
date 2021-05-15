@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 )
 
@@ -95,10 +96,10 @@ func GetRateLimiterConfigs() RateLimiter {
 	}
 }
 
-const LogLevelVerbose = "verbose"
-const LogLevelSilent = "silent"
 const EnvLogLevel = "ENV_LOG_LEVEL"
 
-func GetLogLevel() string {
-	return GetEnvStr(EnvLogLevel, LogLevelVerbose)
+func GetLogLevel() logrus.Level {
+	defaultLevel, _ := logrus.Level.MarshalText(logrus.InfoLevel)
+	level, _ := logrus.ParseLevel(GetEnvStr(EnvLogLevel, string(defaultLevel)))
+	return level
 }

@@ -2,7 +2,7 @@ package configs
 
 import (
 	"github.com/joho/godotenv"
-	"log"
+	"github.com/opentibiabr/login-server/src/logger"
 	"os"
 	"strconv"
 )
@@ -23,9 +23,9 @@ func Init() error {
 }
 
 func (c *GlobalConfigs) Display() {
-	log.Print(c.DBConfigs.Format())
-	log.Print(c.GameServerConfigs.Format())
-	log.Print(c.LoginServerConfigs.Format())
+	logger.Info(c.DBConfigs.Format())
+	logger.Info(c.GameServerConfigs.Format())
+	logger.Info(c.LoginServerConfigs.Format())
 }
 
 func GetGlobalConfigs() GlobalConfigs {
@@ -44,7 +44,7 @@ func GetEnvInt(key string, defaultValue ...int) int {
 
 	intValue, err := strconv.Atoi(value)
 	if err != nil {
-		log.Printf("Invalid integer value for %s", key)
+		logger.Error(err)
 		return 0
 	}
 

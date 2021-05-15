@@ -2,7 +2,8 @@ package limiter
 
 import (
 	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"sync"
@@ -60,12 +61,13 @@ func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			utils.Log(err.Error())
+			logger.Error(err)
 			ip = ""
 		}
 
 		limiter := rl.getVisitor(ip)
 		if !limiter.Allow() {
+			logger.WithFields(logrus.Fields{"ip": ip}).Info("too many requests")
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}

@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/opentibiabr/login-server/src/api/limiter"
 	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/logger"
 	"log"
 	"net/http"
 	"sync"
@@ -21,7 +21,7 @@ type Api struct {
 func (_api *Api) Initialize() {
 	err := configs.Init()
 	if err != nil {
-		utils.Log("Failed to load '.env' in dev environment, going with default.")
+		logger.Warn("Failed to load '.env' in dev environment, going with default.")
 	}
 
 	_api.Configs = configs.GetGlobalConfigs()

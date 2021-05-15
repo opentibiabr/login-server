@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/logger"
 )
 
 type Players struct {
@@ -36,6 +37,7 @@ func LoadPlayers(db *sql.DB, players *Players) error {
 
 	rows, err := db.Query(statement)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -46,6 +48,7 @@ func LoadPlayers(db *sql.DB, players *Players) error {
 
 		err := player.load(rows)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -69,6 +72,7 @@ func (player *Player) load(rows *sql.Rows) error {
 		&player.LookAddons,
 		&player.LastLogin,
 	); err != nil {
+		logger.Error(err)
 		return err
 	}
 

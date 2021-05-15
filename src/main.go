@@ -2,12 +2,14 @@ package main
 
 import (
 	"github.com/opentibiabr/login-server/src/api"
-	"log"
+	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/logger"
 )
 
 func main() {
-	log.Print("Welcome to OTBR Login Server")
-	log.Print("Loading configurations...")
+	logger.Init(configs.GetLogLevel())
+	logger.Info("Welcome to OTBR Login Server")
+	logger.Info("Loading configurations...")
 
 	app := api.Api{}
 	app.Initialize()

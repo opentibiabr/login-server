@@ -43,7 +43,7 @@ You can also download our docker image and apply the environment variables to yo
 |`DB_PORT`            | `database port`                      |
 |`DB_PASSWORD`        | `database password`                  |
 |`DB_USERNAME`        | `database username`                  |
-|`ENV_LOG_LEVEL`      | `verbose/silent defines log level`   |
+|`ENV_LOG_LEVEL`      | `logrus log level for verbose` [ref](https://pkg.go.dev/github.com/sirupsen/logrus#Level)   |
 |`ENV_TYPE`           | `test/dev/prod uses .env if 'dev'`   |
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |

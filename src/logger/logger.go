@@ -45,11 +45,7 @@ func Error(err error) {
 	logger.Error(err.Error())
 }
 
-var test = int64(0)
-
 func BuildRequestLogFields(r *http.Request, start time.Time) log.Fields {
-	test += time.Since(start).Milliseconds()
-	log.Print(test)
 	return log.Fields{
 		"2": "web-server",
 		"3": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),

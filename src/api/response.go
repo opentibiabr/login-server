@@ -30,7 +30,7 @@ func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload i
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
-	_,  err := w.Write(response)
+	_, err := w.Write(response)
 	if err != nil {
 		utils.Log(err.Error())
 	}

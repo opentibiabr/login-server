@@ -1,20 +1,14 @@
 package utils
 
 import (
+	"github.com/opentibiabr/login-server/src/configs"
 	"log"
 )
 
-const LogLevelVerbose = "verbose"
-const LogLevelSilent = "silent"
-
 func Log(format string, v ...interface{}) {
-	if getLogLevel() == LogLevelSilent {
+	if configs.GetLogLevel() == configs.LogLevelSilent {
 		return
 	}
 
 	log.Printf(format, v...)
-}
-
-func getLogLevel() string {
-	return GetEnvStr(EnvLogLevel, LogLevelVerbose)
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/utils"
 	"net/http"
 )
 
@@ -42,7 +41,7 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(_api.Configs, *acc, *players))
+	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(*acc, *players))
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
@@ -74,7 +73,6 @@ func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, 
 }
 
 func BuildLoginResponsePayload(
-	configs utils.Configs,
 	acc database.Account,
 	players database.Players,
 ) login.ResponsePayload {
@@ -90,7 +88,7 @@ func BuildLoginResponsePayload(
 
 	return login.ResponsePayload{
 		PlayData: login.PlayData{
-			Worlds:     []login.World{login.LoadWorld(configs)},
+			Worlds:     []login.World{login.LoadWorld()},
 			Characters: characters,
 		},
 		Session: session,

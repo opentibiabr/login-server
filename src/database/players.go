@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/opentibiabr/login-server/src/api/login"
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/configs"
 )
 
 type Players struct {
@@ -81,7 +81,7 @@ func (player *Player) ToCharacterPayload() login.CharacterPayload {
 		CharacterInfo: login.CharacterInfo{
 			Name:     player.Name,
 			Level:    player.Level,
-			Vocation: utils.GetServerVocations()[player.Vocation],
+			Vocation: configs.GetServerVocations()[player.Vocation],
 			IsMale:   player.Sex == 1,
 		},
 		Outfit: login.Outfit{

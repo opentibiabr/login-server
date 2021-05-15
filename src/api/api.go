@@ -2,10 +2,10 @@ package api
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/opentibiabr/login-server/src/api/limiter"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/utils"
 	"log"
 	"net/http"
@@ -15,23 +15,18 @@ import (
 type Api struct {
 	Router  *mux.Router
 	DB      *sql.DB
-	Configs utils.Configs
+	Configs configs.GlobalConfigs
 }
 
 func (_api *Api) Initialize() {
-	_api.Configs.Load()
+	err := configs.Init()
+	if err != nil {
+		utils.Log("Failed to load '.env' in dev environment, going with default.")
+	}
 
-	connectionString := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
-		_api.Configs.DBConfigs.User,
-		_api.Configs.DBConfigs.Pass,
-		_api.Configs.DBConfigs.Host,
-		_api.Configs.DBConfigs.Port,
-		_api.Configs.DBConfigs.Name,
-	)
+	_api.Configs = configs.GetGlobalConfigs()
 
-	var err error
-	_api.DB, err = sql.Open("mysql", connectionString)
+	_api.DB, err = sql.Open("mysql", _api.Configs.DBConfigs.GetConnectionString())
 	if err != nil {
 		log.Fatal(err)
 	}

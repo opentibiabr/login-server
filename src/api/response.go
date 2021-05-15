@@ -3,12 +3,13 @@ package api
 import (
 	"encoding/json"
 	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
-func logAndRespond(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
-	logger.LogRequest(r, code, payload, "OK")
+func respondAndLog(w http.ResponseWriter, code int, payload interface{}, fields logrus.Fields) {
 	respondWithJSON(w, code, payload)
+	logger.LogRequest(code, payload, "OK", fields)
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

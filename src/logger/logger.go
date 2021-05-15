@@ -5,6 +5,7 @@ import (
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 var logger = log.New()
@@ -16,13 +17,8 @@ func Init(level log.Level) {
 	})
 }
 
-func LogRequest(r *http.Request, code int, payload interface{}, message string) {
-	fields := log.Fields{
-		"component": "web-server",
-		"code":      code,
-		"url":       fmt.Sprintf("%s %s", r.Method, r.URL),
-	}
-
+func LogRequest(code int, payload interface{}, message string, fields log.Fields) {
+	fields["1"] = code
 	logger.WithFields(fields).Info(message)
 
 	fields["payload"] = payload
@@ -47,4 +43,16 @@ func Warn(message string) {
 
 func Error(err error) {
 	logger.Error(err.Error())
+}
+
+var test = int64(0)
+
+func BuildRequestLogFields(r *http.Request, start time.Time) log.Fields {
+	test += time.Since(start).Milliseconds()
+	log.Print(test)
+	return log.Fields{
+		"2": "web-server",
+		"3": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
+		"4": fmt.Sprintf("%s %s", r.Method, r.URL),
+	}
 }

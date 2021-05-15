@@ -9,17 +9,20 @@ import (
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 const DefaultLoginErrorCode = 3
 
-func logLoginErrorAndRespond(w http.ResponseWriter, r *http.Request, error api_errors.LoginErrorPayload) {
-	logger.LogRequest(r, http.StatusOK, error, "unsuccessful login")
+func respondAndLogLoginError(w http.ResponseWriter, error api_errors.LoginErrorPayload, fields logrus.Fields) {
 	respondWithJSON(w, http.StatusOK, error)
+	logger.LogRequest(http.StatusOK, error, "unsuccessful login", fields)
 }
 
 func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	payload, err := validateLoginPayload(r)
 	if err != nil {
 		logger.Error(err)
@@ -31,7 +34,7 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 
 	acc, apiError := LoadAccount(payload, _api.DB)
 	if apiError != nil {
-		logLoginErrorAndRespond(w, r, *apiError)
+		respondAndLogLoginError(w, *apiError, logger.BuildRequestLogFields(r, start))
 		return
 	}
 
@@ -44,7 +47,12 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(*acc, *players))
+	respondAndLog(
+		w,
+		http.StatusOK,
+		BuildLoginResponsePayload(*acc, *players),
+		logger.BuildRequestLogFields(r, start),
+	)
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {

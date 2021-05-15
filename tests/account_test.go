@@ -38,7 +38,7 @@ func TestGetSession(t *testing.T) {
 
 func TestGetPremiumTime(t *testing.T) {
 	monkey.Patch(time.Now, func() time.Time {
-		return time.Unix(1, 0)
+		return time.Unix(1621103616, 0)
 	})
 
 	acc := database.Account{PremDays: -1000}
@@ -48,5 +48,5 @@ func TestGetPremiumTime(t *testing.T) {
 	assert.Equal(t, 0, acc.GetPremiumTime())
 
 	acc = database.Account{PremDays: 1}
-	assert.Equal(t, 87400, acc.GetPremiumTime())
+	assert.Equal(t, 1621103702400, acc.GetPremiumTime())
 }

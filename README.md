@@ -48,7 +48,6 @@ You can also download our docker image and apply the environment variables to yo
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
 |`LOGIN_TCP_PORT`     | `login tcp port (to be implemented)` |
-|`LOGIN_PORT`         | `login http port`                    |
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
 |`SERVER_IP`          | `game server IP address`             |

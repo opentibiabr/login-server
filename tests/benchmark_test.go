@@ -6,29 +6,43 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 )
 
 var wg sync.WaitGroup
 
-func asynRequest(payload []byte) {
-	_,err := http.Post("http://localhost:80/login", "application/json", bytes.NewBuffer(payload))
+var countOk = 0
 
-	if err != nil {
-		log.Print("Error on post login")
+func asynRequest(payload []byte) {
+	res, _ := http.Post("http://localhost:80/login.php", "application/json", bytes.NewBuffer(payload))
+
+	if res != nil && res.StatusCode == http.StatusOK {
+		countOk++
 	}
 
 	wg.Done()
 }
 
 func BenchmarkApi(b *testing.B) {
-	wg.Add(b.N * 1)
-	b.ResetTimer()
-	b.StopTimer()
-	payload := []byte(`{"type":"login","email":"@god","password":"god"}`)
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		go asynRequest(payload)
-		b.StopTimer()
+	if b.N <= 1 {
+		return
 	}
-	wg.Wait()
+	payload := []byte(`{"type":"login","email":"@god","password":"god"}`)
+	log.Print("\nBenchmarking with OpenTibiaBR Login Server")
+
+	totalTime := int64(0)
+	for j := 0; j < 10; j++ {
+		wg.Add(b.N)
+		start := time.Now()
+		for i := 0; i < b.N; i++ {
+			go asynRequest(payload)
+		}
+		wg.Wait()
+		requestTime := time.Since(start).Milliseconds()
+		log.Printf("performing %dx requests in %dms", b.N, requestTime)
+		totalTime += requestTime
+		time.Sleep(100 * time.Millisecond)
+	}
+	log.Printf("average: %.2f requests/s", float64(10*b.N)/float64(totalTime)*1000)
+	log.Printf("availability: %.4f", float64(countOk)/float64(10*b.N))
 }

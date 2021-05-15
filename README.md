@@ -62,13 +62,26 @@ You can also download our docker image and apply the environment variables to yo
 **Build**  
 `RUN go build -o TARGET_NAME ./src/`
 
-
 ## Docker
 `docker pull opentibiabr/login-server:latest`<br><br>
 [![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)
 [![Image Size](https://img.shields.io/docker/image-size/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/tags?page=1&ordering=last_updated)
 ![Pulls](https://img.shields.io/docker/pulls/opentibiabr/login-server)
 [![Build](https://img.shields.io/docker/cloud/build/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server/builds)
+
+## Benchmark
+There are a few known login versions available. The most common ones are a python login and login.php, from different websites versions.
+We've performed a benchmark (code available in benchmark_test.go) where 1k valid requests were performed to the server, locally.
+As you can see in the results below, we got up to 10x faster without decreasing the server availability (99.5% is still pretty good in any global standard).
+
+![image](https://user-images.githubusercontent.com/34237492/118380499-7da2f500-b5e2-11eb-9025-eda180d501df.png)
+
+Also, we performed a benchmark in google cloud, using cloud run and cloud sql database, both with lower possible specifications.
+As you can see, we kept an average of 700 requests/s and a good availability, even if with the latency between my computed and cloud services being accounted in this graph.
+
+![image](https://user-images.githubusercontent.com/34237492/118379403-64964600-b5da-11eb-9e11-25c92024986d.png)
+
+Another great aspect is that, comparing with the python login, our docker image is almost 10x smaller (10Mb). 
 
 ## Issues
 

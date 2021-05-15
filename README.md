@@ -36,21 +36,26 @@ You can also download our docker image and apply the environment variables to yo
 
 **Enviroment Variables**
 
-|       NAME       |            HOW TO USE             |
-| :-------------- | :--------------------------------- |
-|`DB_DATABASE`     | `database default database name`  |
-|`DB_HOSTNAME`     | `database host`                   |
-|`DB_PORT`         | `database port`                   |
-|`DB_PASSWORD`     | `database password`               |
-|`DB_USERNAME`     | `database username`               |
-|`ENV_LOG_LEVEL`   | `verbose/silent defines log level`|
-|`ENV_TYPE`        | `test/dev/prod uses .env if 'dev'`|
-|`LOGIN_PORT`      | `login http port`                 |
-|`SERVER_IP`       | `game server IP address`          |
-|`SERVER_LOCATION` | `game server location`            |
-|`SERVER_NAME`     | `game server name`                |
-|`SERVER_PORT`     | `game server game port`           |
-|`VOCATIONS`       | `game vocation list csv (a,b,c)`  |
+|       NAME          |            HOW TO USE                |
+| :------------------ | :----------------------------------  |
+|`DB_DATABASE`        | `database default database name`     |
+|`DB_HOSTNAME`        | `database host`                      |
+|`DB_PORT`            | `database port`                      |
+|`DB_PASSWORD`        | `database password`                  |
+|`DB_USERNAME`        | `database username`                  |
+|`ENV_LOG_LEVEL`      | `logrus log level for verbose` [ref](https://pkg.go.dev/github.com/sirupsen/logrus#Level)   |
+|`ENV_TYPE`           | `test/dev/prod uses .env if 'dev'`   |
+|`LOGIN_IP`           | `login ip address`                   |
+|`LOGIN_HTTP_PORT`    | `login http port`                    |
+|`LOGIN_TCP_PORT`     | `login tcp port (to be implemented)` |
+|`LOGIN_PORT`         | `login http port`                    |
+|`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
+|`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
+|`SERVER_IP`          | `game server IP address`             |
+|`SERVER_LOCATION`    | `game server location`               |
+|`SERVER_NAME`        | `game server name`                   |
+|`SERVER_PORT`        | `game server game port`              |
+|`VOCATIONS`          | `game vocation list csv (a,b,c)`     |
 
 **Tests**  
 `go test ./tests -v`

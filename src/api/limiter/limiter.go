@@ -1,7 +1,9 @@
 package limiter
 
 import (
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"sync"
@@ -10,12 +12,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const LimitRate = 10
-const LimitBurst = 30
-
 type IPRateLimiter struct {
 	Visitors map[string]*Visitor
 	Mu       *sync.RWMutex
+	Configs  configs.RateLimiter
 }
 
 type Visitor struct {
@@ -24,6 +24,7 @@ type Visitor struct {
 }
 
 func (rl *IPRateLimiter) Init() {
+	rl.Configs = configs.GetRateLimiterConfigs()
 	go rl.cleanupVisitors()
 }
 
@@ -33,7 +34,7 @@ func (rl *IPRateLimiter) getVisitor(ip string) *rate.Limiter {
 
 	v, exists := rl.Visitors[ip]
 	if !exists {
-		limiter := rate.NewLimiter(LimitRate, LimitBurst)
+		limiter := rate.NewLimiter(rl.Configs.Rate, rl.Configs.Burst)
 		rl.Visitors[ip] = &Visitor{limiter, time.Now()}
 		return limiter
 	}
@@ -60,13 +61,14 @@ func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			utils.Log(err.Error())
+			logger.Error(err)
 			ip = ""
 		}
 
 		limiter := rl.getVisitor(ip)
 		if !limiter.Allow() {
-			http.Error(w, http.StatusText( http.StatusTooManyRequests), http.StatusTooManyRequests)
+			logger.WithFields(logrus.Fields{"ip": ip}).Info("too many requests")
+			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}
 

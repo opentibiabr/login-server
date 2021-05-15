@@ -8,21 +8,22 @@ import (
 	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/logger"
 	"net/http"
 )
 
 const DefaultLoginErrorCode = 3
 
 func logLoginErrorAndRespond(w http.ResponseWriter, r *http.Request, error api_errors.LoginErrorPayload) {
-	logResponse(r, http.StatusOK, error)
-	respondWithJSON(w, r, http.StatusOK, error)
+	logger.LogRequest(r, http.StatusOK, error, "unsuccessful login")
+	respondWithJSON(w, http.StatusOK, error)
 }
 
 func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 	payload, err := validateLoginPayload(r)
 	if err != nil {
-		logErrorAndRespond(w, r, http.StatusBadRequest, err.Error())
+		logger.Error(err)
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -38,11 +39,12 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 
 	err = database.LoadPlayers(_api.DB, players)
 	if err != nil {
-		logErrorAndRespond(w, r, http.StatusInternalServerError, err.Error())
+		logger.Error(err)
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(_api.Configs, *acc, *players))
+	logAndRespond(w, r, http.StatusOK, BuildLoginResponsePayload(*acc, *players))
 }
 
 func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
@@ -50,6 +52,7 @@ func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&payload); err != nil {
+		logger.Error(err)
 		return nil, errors.New("Invalid request payload")
 	}
 
@@ -64,6 +67,7 @@ func validateLoginPayload(r *http.Request) (*login.RequestPayload, error) {
 func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, *api_errors.LoginErrorPayload) {
 	acc := database.Account{Email: payload.Email, Password: payload.Password}
 	if err := acc.Authenticate(DB); err != nil {
+		logger.Debug(err.Error())
 		return nil, &api_errors.LoginErrorPayload{
 			ErrorCode:    DefaultLoginErrorCode,
 			ErrorMessage: "Account email or password is not correct.",
@@ -74,7 +78,6 @@ func LoadAccount(payload *login.RequestPayload, DB *sql.DB) (*database.Account, 
 }
 
 func BuildLoginResponsePayload(
-	configs utils.Configs,
 	acc database.Account,
 	players database.Players,
 ) login.ResponsePayload {
@@ -90,7 +93,7 @@ func BuildLoginResponsePayload(
 
 	return login.ResponsePayload{
 		PlayData: login.PlayData{
-			Worlds:     []login.World{login.LoadWorld(configs)},
+			Worlds:     []login.World{login.LoadWorld()},
 			Characters: characters,
 		},
 		Session: session,

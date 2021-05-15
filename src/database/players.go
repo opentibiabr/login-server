@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/opentibiabr/login-server/src/api/login"
-	"github.com/opentibiabr/login-server/src/utils"
+	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/logger"
 )
 
 type Players struct {
@@ -36,6 +37,7 @@ func LoadPlayers(db *sql.DB, players *Players) error {
 
 	rows, err := db.Query(statement)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -46,6 +48,7 @@ func LoadPlayers(db *sql.DB, players *Players) error {
 
 		err := player.load(rows)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -69,6 +72,7 @@ func (player *Player) load(rows *sql.Rows) error {
 		&player.LookAddons,
 		&player.LastLogin,
 	); err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -81,7 +85,7 @@ func (player *Player) ToCharacterPayload() login.CharacterPayload {
 		CharacterInfo: login.CharacterInfo{
 			Name:     player.Name,
 			Level:    player.Level,
-			Vocation: utils.GetServerVocations()[player.Vocation],
+			Vocation: configs.GetServerVocations()[player.Vocation],
 			IsMale:   player.Sex == 1,
 		},
 		Outfit: login.Outfit{

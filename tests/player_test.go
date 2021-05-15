@@ -8,8 +8,7 @@ import (
 )
 
 func TestPlayerToCharacterPayload(t *testing.T) {
-	defaultString := "default_string"
-	defaultNumber := 12
+	defNumber := 12
 
 	expectedCharacterPayload := login.CharacterPayload{
 		WorldID: 0,
@@ -31,16 +30,16 @@ func TestPlayerToCharacterPayload(t *testing.T) {
 
 	player := database.Player{
 		Name:       defaultString,
-		Level:      defaultNumber,
-		Sex:        defaultNumber,
-		Vocation:   defaultNumber,
-		LookType:   defaultNumber,
-		LookHead:   defaultNumber,
-		LookBody:   defaultNumber,
-		LookLegs:   defaultNumber,
-		LookFeet:   defaultNumber,
-		LookAddons: defaultNumber,
-		LastLogin:  defaultNumber,
+		Level:      defNumber,
+		Sex:        defNumber,
+		Vocation:   defNumber,
+		LookType:   defNumber,
+		LookHead:   defNumber,
+		LookBody:   defNumber,
+		LookLegs:   defNumber,
+		LookFeet:   defNumber,
+		LookAddons: defNumber,
+		LastLogin:  defNumber,
 	}
 	character := player.ToCharacterPayload()
 

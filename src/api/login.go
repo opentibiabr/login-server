@@ -1,13 +1,13 @@
-package http_api
+package api
 
 import (
 	"database/sql"
 	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/opentibiabr/login-server/src/api/api_errors"
+	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/http_api/api_errors"
-	"github.com/opentibiabr/login-server/src/http_api/login"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/sirupsen/logrus"
 	"net/http"

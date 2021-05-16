@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/opentibiabr/login-server/src/http_api"
+	"github.com/opentibiabr/login-server/src/api"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-var a http_api.Api
+var a api.Api
 
 const defaultString = "default_string"
 const defaultNumberStr = "8080"
@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	/* Disable application logs */
 	logger.Init(logrus.PanicLevel)
 
-	a = http_api.Api{}
+	a = api.Api{}
 	a.Initialize()
 	code := m.Run()
 	os.Exit(code)

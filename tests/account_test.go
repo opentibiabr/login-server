@@ -2,8 +2,8 @@ package tests
 
 import (
 	"bou.ke/monkey"
+	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/http_api/login"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"

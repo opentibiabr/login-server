@@ -1,11 +1,11 @@
-package http_api
+package api
 
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/opentibiabr/login-server/src/api/limiter"
 	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/http_api/limiter"
 	"github.com/opentibiabr/login-server/src/logger"
 	"log"
 	"net/http"

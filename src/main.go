@@ -2,9 +2,9 @@ package main
 
 import (
 	"errors"
+	"github.com/opentibiabr/login-server/src/api"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc"
-	"github.com/opentibiabr/login-server/src/http_api"
 	"github.com/opentibiabr/login-server/src/logger"
 	"sync"
 )
@@ -34,7 +34,7 @@ func startGrpcServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
 }
 
 func startHttpServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
-	httpServer := http_api.Api{}
+	httpServer := api.Api{}
 	httpServer.Initialize(globalConfigs)
 	httpServer.Configs.Display()
 	httpServer.Run(httpServer.Configs.LoginServerConfigs.Http.Format())

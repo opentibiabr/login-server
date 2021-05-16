@@ -4,7 +4,7 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
-	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api_http/login"
 	"time"
 )
 
@@ -46,7 +46,7 @@ func (acc *Account) GetSession() login.Session {
 
 func (acc *Account) GetPremiumTime() int {
 	if acc.PremDays > 0 {
-		return int(time.Now().UnixNano() / million) + acc.PremDays * secondsInADay
+		return int(time.Now().UnixNano()/million) + acc.PremDays*secondsInADay
 	}
 	return 0
 }

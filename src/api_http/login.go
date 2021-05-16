@@ -1,12 +1,12 @@
-package api
+package api_http
 
 import (
 	"database/sql"
 	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/opentibiabr/login-server/src/api/api_errors"
-	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api_http/api_errors"
+	"github.com/opentibiabr/login-server/src/api_http/login"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/sirupsen/logrus"
@@ -21,7 +21,7 @@ func respondAndLogLoginError(w http.ResponseWriter, error api_errors.LoginErrorP
 	logger.LogRequest(http.StatusOK, error, "unsuccessful login", fields)
 }
 
-func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
+func (_api *HttpApi) login(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	payload, err := validateLoginPayload(r)
 	if err != nil {

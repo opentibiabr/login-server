@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api_http/login"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/stretchr/testify/assert"
 	"testing"

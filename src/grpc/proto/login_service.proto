@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/api/annotations.proto";
 option go_package = "../proto";
 package grpc.login_server;
 
@@ -12,10 +11,5 @@ message LoginResponse {
 }
 
 service LoginService {
-    rpc Login(LoginRequest) returns (LoginResponse) {
-        option (google.api.http) = {
-            post: "/login.php"
-            body: "*"
-        };
-    };
+    rpc Login(LoginRequest) returns (LoginResponse);
 }

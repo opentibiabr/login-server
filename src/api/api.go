@@ -8,7 +8,6 @@ import (
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/definitions"
 	"github.com/opentibiabr/login-server/src/logger"
-	"log"
 	"net/http"
 	"sync"
 )
@@ -19,7 +18,8 @@ type Api struct {
 	definitions.ServerInterface
 }
 
-func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) {
+func Initialize(gConfigs configs.GlobalConfigs) *Api {
+	var _api Api
 	err := configs.Init()
 	if err != nil {
 		logger.Warn("Failed to load '.env' in dev environment, going with default.")
@@ -27,7 +27,7 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) {
 
 	_api.DB, err = sql.Open("mysql", gConfigs.DBConfigs.GetConnectionString())
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	ipLimiter := &limiter.IPRateLimiter{
@@ -40,10 +40,11 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) {
 	_api.Router = mux.NewRouter()
 	_api.initializeRoutes()
 	_api.Router.Use(ipLimiter.Limit)
+
+	return &_api
 }
 
 func (_api *Api) Run(gConfigs configs.GlobalConfigs) error {
-	_api.Initialize(gConfigs)
 	return http.ListenAndServe(gConfigs.LoginServerConfigs.Http.Format(), _api.Router)
 }
 
@@ -54,4 +55,5 @@ func (_api *Api) GetName() string {
 func (_api *Api) initializeRoutes() {
 	_api.Router.HandleFunc("/login", _api.login).Methods("GET", "POST", "PUT")
 	_api.Router.HandleFunc("/login.php", _api.login).Methods("GET", "POST", "PUT")
+	_api.Router.HandleFunc("/login2", _api.login2).Methods("GET", "POST", "PUT")
 }

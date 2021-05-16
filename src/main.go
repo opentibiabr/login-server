@@ -26,8 +26,8 @@ func main() {
 
 	gConfigs := configs.GetGlobalConfigs()
 
-	go startServer(&wg, gConfigs, new(api.Api))
-	go startServer(&wg, gConfigs, new(grpc_server.GrpcServer))
+	go startServer(&wg, gConfigs, grpc_server.Initialize(gConfigs))
+	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
 
 	time.Sleep(200 * time.Millisecond)
 	gConfigs.Display()
@@ -39,11 +39,11 @@ func main() {
 
 func startServer(
 	wg *sync.WaitGroup,
-	globalConfigs configs.GlobalConfigs,
+	gConfigs configs.GlobalConfigs,
 	server definitions.ServerInterface,
 ) {
 	logger.Info(fmt.Sprintf("Starting %s server...", server.GetName()))
-	logger.Error(server.Run(globalConfigs))
+	logger.Error(server.Run(gConfigs))
 	wg.Done()
 	logger.Warn(fmt.Sprintf("Server %s is gone...", server.GetName()))
 }

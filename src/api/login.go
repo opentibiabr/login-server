@@ -8,6 +8,8 @@ import (
 	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/database"
+	grpc_server "github.com/opentibiabr/login-server/src/grpc"
+	"github.com/opentibiabr/login-server/src/grpc/proto"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -19,6 +21,18 @@ const DefaultLoginErrorCode = 3
 func respondAndLogLoginError(w http.ResponseWriter, error api_errors.LoginErrorPayload, fields logrus.Fields) {
 	respondWithJSON(w, http.StatusOK, error)
 	logger.LogRequest(http.StatusOK, error, "unsuccessful login", fields)
+}
+
+func (_api *Api) login2(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	resp := grpc_server.Client(&proto.LoginRequest{Name: "www"})
+
+	respondAndLog(
+		w,
+		http.StatusOK,
+		map[string]string{"fuck you": resp.Name},
+		logger.BuildRequestLogFields(r, start),
+	)
 }
 
 func (_api *Api) login(w http.ResponseWriter, r *http.Request) {

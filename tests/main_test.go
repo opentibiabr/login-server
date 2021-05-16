@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	logger.Init(logrus.PanicLevel)
 
 	a = api.Api{}
-	a.Initialize(configs.GetGlobalConfigs())
+	api.Initialize(configs.GetGlobalConfigs())
 	code := m.Run()
 	os.Exit(code)
 }

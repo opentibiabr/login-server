@@ -126,12 +126,12 @@ var file_login_service_proto_rawDesc = []byte{
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x23, 0x0a, 0x0d, 0x4c, 0x6f, 0x67,
 	0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
-	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x32, 0x2f,
-	0x0a, 0x05, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x26, 0x0a, 0x05, 0x4c, 0x6f, 0x67, 0x69, 0x6e,
-	0x12, 0x0d, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x0e, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x0a, 0x5a, 0x08, 0x2e, 0x2e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x32, 0x36,
+	0x0a, 0x0c, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x26,
+	0x0a, 0x05, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x0d, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2e, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -152,8 +152,8 @@ var file_login_service_proto_goTypes = []interface{}{
 	(*LoginResponse)(nil), // 1: LoginResponse
 }
 var file_login_service_proto_depIdxs = []int32{
-	0, // 0: Login.Login:input_type -> LoginRequest
-	1, // 1: Login.Login:output_type -> LoginResponse
+	0, // 0: LoginService.Login:input_type -> LoginRequest
+	1, // 1: LoginService.Login:output_type -> LoginResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -220,72 +220,72 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// LoginClient is the client API for Login service.
+// LoginServiceClient is the client API for LoginService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type LoginClient interface {
+type LoginServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 }
 
-type loginClient struct {
+type loginServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewLoginClient(cc grpc.ClientConnInterface) LoginClient {
-	return &loginClient{cc}
+func NewLoginServiceClient(cc grpc.ClientConnInterface) LoginServiceClient {
+	return &loginServiceClient{cc}
 }
 
-func (c *loginClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *loginServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, "/Login/Login", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/LoginService/Login", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// LoginServer is the server API for Login service.
-type LoginServer interface {
+// LoginServiceServer is the server API for LoginService service.
+type LoginServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 }
 
-// UnimplementedLoginServer can be embedded to have forward compatible implementations.
-type UnimplementedLoginServer struct {
+// UnimplementedLoginServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedLoginServiceServer struct {
 }
 
-func (*UnimplementedLoginServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+func (*UnimplementedLoginServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
 
-func RegisterLoginServer(s *grpc.Server, srv LoginServer) {
-	s.RegisterService(&_Login_serviceDesc, srv)
+func RegisterLoginServiceServer(s *grpc.Server, srv LoginServiceServer) {
+	s.RegisterService(&_LoginService_serviceDesc, srv)
 }
 
-func _Login_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LoginService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LoginServer).Login(ctx, in)
+		return srv.(LoginServiceServer).Login(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Login/Login",
+		FullMethod: "/LoginService/Login",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LoginServer).Login(ctx, req.(*LoginRequest))
+		return srv.(LoginServiceServer).Login(ctx, req.(*LoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Login_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "Login",
-	HandlerType: (*LoginServer)(nil),
+var _LoginService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "LoginService",
+	HandlerType: (*LoginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Login",
-			Handler:    _Login_Login_Handler,
+			Handler:    _LoginService_Login_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

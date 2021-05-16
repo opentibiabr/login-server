@@ -45,6 +45,10 @@ func Error(err error) {
 	logger.Error(err.Error())
 }
 
+func Fatal(err error) {
+	logger.Error(err.Error())
+}
+
 func BuildRequestLogFields(r *http.Request, start time.Time) log.Fields {
 	return log.Fields{
 		"2": "web-server",

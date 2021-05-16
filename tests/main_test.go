@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/opentibiabr/login-server/src/api"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -20,7 +21,7 @@ func TestMain(m *testing.M) {
 	logger.Init(logrus.PanicLevel)
 
 	a = api.Api{}
-	a.Initialize()
+	a.Initialize(configs.GetGlobalConfigs())
 	code := m.Run()
 	os.Exit(code)
 }

@@ -1,13 +1,20 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/opentibiabr/login-server/src/api"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/definitions"
 	"github.com/opentibiabr/login-server/src/grpc"
 	"github.com/opentibiabr/login-server/src/logger"
 	"sync"
+	"time"
 )
+
+type LoginServer interface {
+	Run(globalConfigs configs.GlobalConfigs) error
+	GetName() string
+}
 
 func main() {
 	logger.Init(configs.GetLogLevel())
@@ -18,26 +25,25 @@ func main() {
 	wg.Add(2)
 
 	gConfigs := configs.GetGlobalConfigs()
-	go startHttpServer(&wg, gConfigs)
-	go startGrpcServer(&wg, gConfigs)
+
+	go startServer(&wg, gConfigs, new(api.Api))
+	go startServer(&wg, gConfigs, new(grpc_server.GrpcServer))
+
+	time.Sleep(200 * time.Millisecond)
+	gConfigs.Display()
 
 	// wait until WaitGroup is done
 	wg.Wait()
 	logger.Info("Good bye...")
 }
 
-func startGrpcServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
-	logger.Info("Grpc is also running bois...")
-	grpc.Run(globalConfigs.LoginServerConfigs.Tcp.Format())
+func startServer(
+	wg *sync.WaitGroup,
+	globalConfigs configs.GlobalConfigs,
+	server definitions.ServerInterface,
+) {
+	logger.Info(fmt.Sprintf("Starting %s server...", server.GetName()))
+	logger.Error(server.Run(globalConfigs))
 	wg.Done()
-	logger.Error(errors.New("Grpc is gone bois..."))
-}
-
-func startHttpServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
-	httpServer := api.Api{}
-	httpServer.Initialize(globalConfigs)
-	httpServer.Configs.Display()
-	httpServer.Run(httpServer.Configs.LoginServerConfigs.Http.Format())
-	wg.Done()
-	logger.Error(errors.New("Http is gone..."))
+	logger.Warn(fmt.Sprintf("Server %s is gone...", server.GetName()))
 }

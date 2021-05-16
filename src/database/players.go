@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/opentibiabr/login-server/src/api_http/login"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/http_api/login"
 	"github.com/opentibiabr/login-server/src/logger"
 )
 

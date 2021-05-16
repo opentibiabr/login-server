@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"github.com/opentibiabr/login-server/src/api_http"
-	"github.com/opentibiabr/login-server/src/api_http/api_errors"
-	"github.com/opentibiabr/login-server/src/api_http/login"
 	"github.com/opentibiabr/login-server/src/database"
+	"github.com/opentibiabr/login-server/src/http_api"
+	"github.com/opentibiabr/login-server/src/http_api/api_errors"
+	"github.com/opentibiabr/login-server/src/http_api/login"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"net/http"
@@ -51,7 +51,7 @@ func TestBuildLoginResponsePayload(t *testing.T) {
 		Players:   []database.Player{player},
 	}
 
-	payload := api_http.BuildLoginResponsePayload(acc, players)
+	payload := http_api.BuildLoginResponsePayload(acc, players)
 
 	expectedSession := acc.GetSession()
 	expectedSession.LastLoginTime = 5123412
@@ -67,7 +67,7 @@ func TestBuildLoginResponsePayload(t *testing.T) {
 
 func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	var count = 0
-	monkey.Patch(api_http.BuildLoginResponsePayload, func(
+	monkey.Patch(http_api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {
@@ -92,7 +92,7 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 
 func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	var count = 0
-	monkey.Patch(api_http.BuildLoginResponsePayload, func(
+	monkey.Patch(http_api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {
@@ -129,7 +129,7 @@ func TestLoginValidCredentials(t *testing.T) {
 		return nil
 	})
 
-	monkey.Patch(api_http.LoadAccount, func(
+	monkey.Patch(http_api.LoadAccount, func(
 		payload *login.RequestPayload,
 		DB *sql.DB,
 	) (*database.Account, *api_errors.LoginErrorPayload) {
@@ -137,7 +137,7 @@ func TestLoginValidCredentials(t *testing.T) {
 		return &account, nil
 	})
 
-	monkey.Patch(api_http.BuildLoginResponsePayload, func(
+	monkey.Patch(http_api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
 	) login.ResponsePayload {

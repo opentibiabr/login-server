@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	"github.com/opentibiabr/login-server/src/api_http"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/http_api"
 	"github.com/opentibiabr/login-server/src/logger"
 	//"github.com/opentibiabr/login-server/src/tcp"
 	"sync"
@@ -33,7 +33,7 @@ func startTcpServer(wg *sync.WaitGroup) {
 }
 
 func startHttpServer(wg *sync.WaitGroup) {
-	httpServer := api_http.HttpApi{}
+	httpServer := http_api.HttpApi{}
 	httpServer.Initialize()
 	httpServer.Configs.Display()
 	httpServer.Run(httpServer.Configs.LoginServerConfigs.Http.Format())

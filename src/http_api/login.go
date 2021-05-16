@@ -21,7 +21,7 @@ func respondAndLogLoginError(w http.ResponseWriter, error api_errors.LoginErrorP
 	logger.LogRequest(http.StatusOK, error, "unsuccessful login", fields)
 }
 
-func (_api *HttpApi) login(w http.ResponseWriter, r *http.Request) {
+func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	payload, err := validateLoginPayload(r)
 	if err != nil {

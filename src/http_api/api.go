@@ -12,19 +12,19 @@ import (
 	"sync"
 )
 
-type HttpApi struct {
+type Api struct {
 	Router  *mux.Router
 	DB      *sql.DB
 	Configs configs.GlobalConfigs
 }
 
-func (_api *HttpApi) Initialize() {
+func (_api *Api) Initialize(globalConfigs configs.GlobalConfigs) {
 	err := configs.Init()
 	if err != nil {
 		logger.Warn("Failed to load '.env' in dev environment, going with default.")
 	}
 
-	_api.Configs = configs.GetGlobalConfigs()
+	_api.Configs = globalConfigs
 
 	_api.DB, err = sql.Open("mysql", _api.Configs.DBConfigs.GetConnectionString())
 	if err != nil {
@@ -43,11 +43,11 @@ func (_api *HttpApi) Initialize() {
 	_api.Router.Use(ipLimiter.Limit)
 }
 
-func (_api *HttpApi) Run(addr string) {
+func (_api *Api) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, _api.Router))
 }
 
-func (_api *HttpApi) initializeRoutes() {
+func (_api *Api) initializeRoutes() {
 	_api.Router.HandleFunc("/login", _api.login).Methods("GET", "POST", "PUT")
 	_api.Router.HandleFunc("/login.php", _api.login).Methods("GET", "POST", "PUT")
 }

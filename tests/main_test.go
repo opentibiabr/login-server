@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-var a http_api.HttpApi
+var a http_api.Api
 
 const defaultString = "default_string"
 const defaultNumberStr = "8080"
@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	/* Disable application logs */
 	logger.Init(logrus.PanicLevel)
 
-	a = http_api.HttpApi{}
+	a = http_api.Api{}
 	a.Initialize()
 	code := m.Run()
 	os.Exit(code)

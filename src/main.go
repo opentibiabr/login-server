@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/grpc"
 	"github.com/opentibiabr/login-server/src/http_api"
 	"github.com/opentibiabr/login-server/src/logger"
-	//"github.com/opentibiabr/login-server/src/tcp"
 	"sync"
 )
 
@@ -17,24 +17,25 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	go startHttpServer(&wg)
-	go startTcpServer(&wg)
+	gConfigs := configs.GetGlobalConfigs()
+	go startHttpServer(&wg, gConfigs)
+	go startGrpcServer(&wg, gConfigs)
 
 	// wait until WaitGroup is done
 	wg.Wait()
 	logger.Info("Good bye...")
 }
 
-func startTcpServer(wg *sync.WaitGroup) {
-	logger.Info("Tcp is also running bois...")
-	//tcp.Run()
+func startGrpcServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
+	logger.Info("Grpc is also running bois...")
+	grpc.Run(globalConfigs.LoginServerConfigs.Tcp.Format())
 	wg.Done()
-	logger.Error(errors.New("TCP is gone bois..."))
+	logger.Error(errors.New("Grpc is gone bois..."))
 }
 
-func startHttpServer(wg *sync.WaitGroup) {
-	httpServer := http_api.HttpApi{}
-	httpServer.Initialize()
+func startHttpServer(wg *sync.WaitGroup, globalConfigs configs.GlobalConfigs) {
+	httpServer := http_api.Api{}
+	httpServer.Initialize(globalConfigs)
 	httpServer.Configs.Display()
 	httpServer.Run(httpServer.Configs.LoginServerConfigs.Http.Format())
 	wg.Done()

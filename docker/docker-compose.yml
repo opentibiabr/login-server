@@ -8,8 +8,10 @@ services:
     restart: unless-stopped
     ports:
       - 80:80
+      - 7171:7171
     environment:
       - LOGIN_HTTP_PORT=80
+      - LOGIN_TCP_PORT=7171
       - DB_HOSTNAME=mysql
       - DB_PORT=3306
       - DB_DATABASE=canary

@@ -6,6 +6,8 @@ import (
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/sirupsen/logrus"
 )
 
 const DefaultLoginErrorCode = 3
@@ -29,6 +31,11 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	}
 
 	res := BuildGrpcLoginResponsePayload(acc.GetGrpcSession(), *players)
+
+	logger.WithFields(logrus.Fields{
+		"0": "gRPC",
+		"1": "login",
+	}).Info("processed")
 
 	return res, nil
 }

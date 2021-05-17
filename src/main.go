@@ -26,7 +26,7 @@ func main() {
 
 	err := configs.Init()
 	if err != nil {
-		logger.Warn("Failed to load '.env' in dev environment, going with default.")
+		logger.Debug("Failed to load '.env' in dev environment, going with default.")
 	}
 
 	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))

@@ -81,7 +81,7 @@ As you can see, we kept an average of 700 requests/s and a good availability, ev
 
 ![image](https://user-images.githubusercontent.com/34237492/118379403-64964600-b5da-11eb-9e11-25c92024986d.png)
 
-Another great aspect is that, comparing with the python login, our docker image is almost 10x smaller (10Mb). 
+Another great aspect is that, comparing with the python login, our docker image is almost 10x smaller (15Mb). 
 
 ## gRPC
 From version 2.0.0 on, we start using gRPC protocol. It was initially prototyped to fit the TCP needs of the login-server, but it ended up being our choice as standard protocol.
@@ -89,7 +89,7 @@ That said, the HTTP also runs on top of the gRPC layer, using a reversed proxy. 
 
 In the TCP server we got a 10x performance boost, compared to the HTTP benchmarks:
 
-![image](https://user-images.githubusercontent.com/34237492/118567577-541ad280-b776-11eb-91b6-35f2c54258d9.png)
+![image](https://user-images.githubusercontent.com/34237492/118568814-e45a1700-b778-11eb-8b79-ddc26dde487c.png)
 
 ## Issues
 

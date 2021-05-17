@@ -140,7 +140,7 @@ func TestBuildGrpcLoginResponsePayload(t *testing.T) {
 					},
 				}},
 				Worlds: []*login_proto_messages.World{{
-					Id:                         0,
+					Id:                         1,
 					ExternalPort:               7172,
 					ExternalPortProtected:      7172,
 					ExternalPortUnprotected:    7172,

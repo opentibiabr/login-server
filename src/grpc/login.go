@@ -2,7 +2,7 @@ package grpc_login_server
 
 import (
 	"context"
-	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
@@ -27,10 +27,10 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return nil, err
 	}
 
-	return buildLoginResponsePayload(acc.GetGrpcSession(), *players), nil
+	return BuildGrpcLoginResponsePayload(acc.GetGrpcSession(), *players), nil
 }
 
-func buildLoginResponsePayload(
+func BuildGrpcLoginResponsePayload(
 	session *login_proto_messages.Session,
 	players database.Players,
 ) *login_proto_messages.LoginResponse {
@@ -47,25 +47,8 @@ func buildLoginResponsePayload(
 	return &login_proto_messages.LoginResponse{
 		PlayData: &login_proto_messages.PlayData{
 			Characters: characters,
-			Worlds:     loadWorldsMessage(),
+			Worlds:     models.BuildWorldsMessage(),
 		},
 		Session: session,
-	}
-}
-
-func loadWorldsMessage() []*login_proto_messages.World {
-	return []*login_proto_messages.World{loadWorldMessage(configs.GetGameServerConfigs())}
-}
-
-func loadWorldMessage(gameConfigs configs.GameServerConfigs) *login_proto_messages.World {
-	return &login_proto_messages.World{
-		ExternalAddress:            gameConfigs.IP,
-		ExternalAddressProtected:   gameConfigs.IP,
-		ExternalAddressUnprotected: gameConfigs.IP,
-		ExternalPort:               uint32(gameConfigs.Port),
-		ExternalPortProtected:      uint32(gameConfigs.Port),
-		ExternalPortUnprotected:    uint32(gameConfigs.Port),
-		Location:                   gameConfigs.Location,
-		Name:                       gameConfigs.Name,
 	}
 }

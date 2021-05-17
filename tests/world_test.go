@@ -1,14 +1,14 @@
 package tests
 
 import (
-	"github.com/opentibiabr/login-server/src/api/login"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestLoadWorld(t *testing.T) {
+func TestBuildWorldMessage(t *testing.T) {
 	SetEnvKeys(
 		[]string{
 			configs.EnvServerIpKey,
@@ -30,7 +30,7 @@ func TestLoadWorld(t *testing.T) {
 		},
 	)
 
-	expectedWorld := models.World{
+	expectedWorld := &login_proto_messages.World{
 		ExternalAddress:            defaultString,
 		ExternalAddressProtected:   defaultString,
 		ExternalAddressUnprotected: defaultString,
@@ -40,7 +40,7 @@ func TestLoadWorld(t *testing.T) {
 		Location:                   defaultString,
 		Name:                       defaultString,
 	}
-	world := login.LoadWorld()
+	world := models.buildWorldMessage(configs.GetGameServerConfigs())
 
 	assert.Equal(t, expectedWorld, world)
 

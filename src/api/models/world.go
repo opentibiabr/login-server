@@ -1,6 +1,9 @@
 package models
 
-import "github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+import (
+	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+)
 
 type World struct {
 	AntiCheatProtection        bool   `json:"anticheatprotection"`
@@ -39,4 +42,21 @@ func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 	}
 
 	return worlds
+}
+
+func BuildWorldsMessage() []*login_proto_messages.World {
+	return []*login_proto_messages.World{buildWorldMessage(configs.GetGameServerConfigs())}
+}
+
+func buildWorldMessage(gameConfigs configs.GameServerConfigs) *login_proto_messages.World {
+	return &login_proto_messages.World{
+		ExternalAddress:            gameConfigs.IP,
+		ExternalAddressProtected:   gameConfigs.IP,
+		ExternalAddressUnprotected: gameConfigs.IP,
+		ExternalPort:               uint32(gameConfigs.Port),
+		ExternalPortProtected:      uint32(gameConfigs.Port),
+		ExternalPortUnprotected:    uint32(gameConfigs.Port),
+		Location:                   gameConfigs.Location,
+		Name:                       gameConfigs.Name,
+	}
 }

@@ -1,4 +1,4 @@
-package definitions
+package server
 
 import "github.com/opentibiabr/login-server/src/configs"
 

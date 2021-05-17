@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
 
@@ -43,11 +42,11 @@ func LoadCharactersFromMessage(charactersMsg []*login_proto_messages.Character) 
 		characters = append(
 			characters,
 			CharacterPayload{
-				WorldID: 0,
+				WorldID: int(characterMsg.GetWorldId()),
 				CharacterInfo: CharacterInfo{
 					Name:     characterMsg.GetInfo().GetName(),
 					Level:    int(characterMsg.GetInfo().GetLevel()),
-					Vocation: configs.GetServerVocations()[int(characterMsg.GetInfo().GetLevel())],
+					Vocation: characterMsg.GetInfo().GetVocation(),
 					IsMale:   int(characterMsg.GetInfo().GetSex()) == 1,
 				},
 				Outfit: Outfit{

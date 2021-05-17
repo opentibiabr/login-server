@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/definitions"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/server"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -13,7 +13,7 @@ import (
 type GrpcServer struct {
 	DB *sql.DB
 	login_proto_messages.LoginServiceServer
-	definitions.ServerInterface
+	server.ServerInterface
 }
 
 func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {

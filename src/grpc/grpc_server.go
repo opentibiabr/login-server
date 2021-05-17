@@ -11,8 +11,8 @@ import (
 )
 
 type GrpcServer struct {
-	proto.LoginServiceServer
 	DB *sql.DB
+	proto.LoginServiceServer
 	definitions.ServerInterface
 }
 

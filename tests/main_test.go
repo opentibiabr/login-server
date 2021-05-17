@@ -20,8 +20,7 @@ func TestMain(m *testing.M) {
 	/* Disable application logs */
 	logger.Init(logrus.PanicLevel)
 
-	a = api.Api{}
-	api.Initialize(configs.GetGlobalConfigs())
+	a = *api.Initialize(configs.GetGlobalConfigs())
 	code := m.Run()
 	os.Exit(code)
 }

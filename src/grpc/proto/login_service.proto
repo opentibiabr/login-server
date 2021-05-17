@@ -2,12 +2,52 @@ syntax = "proto3";
 option go_package = "../proto";
 package grpc.login_server;
 
+message Error {
+    int32 code = 1;
+    string message = 2;
+}
+
 message LoginRequest {
-    string name = 1;
+    string email = 1;
+    string password = 2;
 }
 
 message LoginResponse {
+    PlayData play_data = 1;
+    Session session = 2;
+    Error error = 3;
+}
+
+message PlayData {
+    repeated Character characters = 1;
+}
+
+message Session {
+    bool is_premium = 1;
+    int32 premium_until = 2;
+    string session_key = 3;
+}
+
+message Character {
+    CharacterInfo info = 1;
+    CharacterOutfit outfit = 2;
+}
+
+message CharacterInfo {
     string name = 1;
+    uint32 level = 2;
+    uint32 vocation = 3;
+    uint32 sex = 4;
+    uint32 last_login = 5;
+}
+
+message CharacterOutfit {
+    uint32 look_type = 1;
+    uint32 look_head = 2;
+    uint32 look_body = 3;
+    uint32 look_legs = 4;
+    uint32 look_feet = 5;
+    uint32 addons = 6;
 }
 
 service LoginService {

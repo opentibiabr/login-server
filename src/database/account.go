@@ -3,8 +3,10 @@ package database
 import (
 	"crypto/sha1"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/logger"
 	"time"
 )
 
@@ -49,4 +51,14 @@ func (acc *Account) GetPremiumTime() int {
 		return int(time.Now().UnixNano()/million) + acc.PremDays*secondsInADay
 	}
 	return 0
+}
+
+func LoadAccount(email string, password string, DB *sql.DB) (*Account, error) {
+	acc := Account{Email: email, Password: password}
+	if err := acc.Authenticate(DB); err != nil {
+		logger.Debug(err.Error())
+		return nil, errors.New("Account email or password is not correct.")
+	}
+
+	return &acc, nil
 }

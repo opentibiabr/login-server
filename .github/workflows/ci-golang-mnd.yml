@@ -15,5 +15,5 @@ jobs:
       - name: Run go-mnd
         uses: tommy-muehle/go-mnd@master
         with:
-          args: ./...
-          ignored-files: "**.pb.go"
+          args:
+            - ignored-files: "**.pb.go"

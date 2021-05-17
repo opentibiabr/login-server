@@ -40,7 +40,8 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.Router.Use(ipLimiter.Limit)
 
 	/* Generate HTTP/GRPC reverse proxy */
-	_api.GrpcConnection, err = grpc.Dial(":7171", grpc.WithInsecure())
+
+	_api.GrpcConnection, err = grpc.Dial(gConfigs.LoginServerConfigs.Tcp.Format(), grpc.WithInsecure())
 	if err != nil {
 		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
 	}

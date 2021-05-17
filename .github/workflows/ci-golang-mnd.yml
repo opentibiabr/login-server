@@ -2,12 +2,8 @@ name: Magic number detector
 on:
   pull_request:
     branches: [ '**' ]
-    paths-ignore:
-      - '**.pb.go'
   push:
     branches: [main]
-    paths-ignore:
-      - '**.pb.go'
 jobs:
   magic-number:
     runs-on: ubuntu-latest
@@ -20,3 +16,4 @@ jobs:
         uses: tommy-muehle/go-mnd@master
         with:
           args: ./...
+          ignored-files: "**.pb.go"

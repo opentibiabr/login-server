@@ -1,7 +1,9 @@
 package configs
 
 import (
-	"reflect"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -17,9 +19,16 @@ func TestGameServerConfigs_Format(t *testing.T) {
 		name   string
 		fields fields
 		want   string
-	}{
-		// TODO: Add test cases.
-	}
+	}{{
+		name: "Format game server configs",
+		fields: fields{
+			Port:     7171,
+			Name:     "superb",
+			IP:       "0.0.0.0",
+			Location: "JPN",
+		},
+		want: "Connected with superb server 0.0.0.0:7171 - JPN",
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gameServerConfigs := &GameServerConfigs{
@@ -29,9 +38,7 @@ func TestGameServerConfigs_Format(t *testing.T) {
 				Location: tt.fields.Location,
 				Config:   tt.fields.Config,
 			}
-			if got := gameServerConfigs.Format(); got != tt.want {
-				t.Errorf("Format() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, gameServerConfigs.Format())
 		})
 	}
 }
@@ -40,29 +47,67 @@ func TestGetGameServerConfigs(t *testing.T) {
 	tests := []struct {
 		name string
 		want GameServerConfigs
-	}{
-		// TODO: Add test cases.
-	}
+	}{{
+		name: "Default Game Server Configs",
+		want: GameServerConfigs{
+			IP:       "127.0.0.1",
+			Name:     "Canary",
+			Port:     7172,
+			Location: "BRA",
+		},
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetGameServerConfigs(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetGameServerConfigs() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, GetGameServerConfigs())
 		})
 	}
 }
 
 func TestGetServerVocations(t *testing.T) {
 	tests := []struct {
-		name string
-		want []string
-	}{
-		// TODO: Add test cases.
-	}
+		name   string
+		want   []string
+		envVoc *[]string
+	}{{
+		name: "Default Vocations",
+		want: []string{
+			"None",
+			"Sorcerer",
+			"Druid",
+			"Paladin",
+			"Knight",
+			"Master Sorcerer",
+			"Elder Druid",
+			"Royal Paladin",
+			"Elite Knight",
+			"Sorcerer Dawnport",
+			"Druid Dawnport",
+			"Paladin Dawnport",
+			"Knight Dawnport",
+		},
+	}, {
+		name: "Uses env voc",
+		want: []string{
+			"artista",
+			"professor",
+			"engenheiro",
+		},
+		envVoc: &[]string{
+			"artista",
+			"professor",
+			"engenheiro",
+		},
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetServerVocations(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetServerVocations() = %v, want %v", got, tt.want)
+			if tt.envVoc != nil {
+				err := os.Setenv(EnvVocations, strings.Join(*tt.envVoc, ","))
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tt.want, GetServerVocations())
+			if tt.envVoc != nil {
+				err := os.Unsetenv(EnvVocations)
+				assert.Nil(t, err)
 			}
 		})
 	}

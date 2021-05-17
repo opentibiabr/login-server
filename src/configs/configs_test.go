@@ -118,6 +118,10 @@ func TestGetEnvInt(t *testing.T) {
 			}
 			got := GetEnvInt(tt.args.key, tt.args.defaultValue...)
 			assert.Equal(t, got, tt.want)
+			if tt.envKey != 0 {
+				err := os.Unsetenv(tt.args.key)
+				assert.Nil(t, err)
+			}
 		})
 	}
 }
@@ -159,6 +163,10 @@ func TestGetEnvStr(t *testing.T) {
 			}
 			got := GetEnvStr(tt.args.key, tt.args.defaultValue...)
 			assert.Equal(t, got, tt.want)
+			if tt.envKey != "" {
+				err := os.Unsetenv(tt.args.key)
+				assert.Nil(t, err)
+			}
 		})
 	}
 }

@@ -47,7 +47,7 @@ func TestDBConfigs_Format(t *testing.T) {
 				Pass:   tt.fields.Pass,
 				Config: tt.fields.Config,
 			}
-			assert.Equal(t, tt.want, dbConfigs.Format())
+			assert.Equal(t, tt.want, dbConfigs.format())
 		})
 	}
 }

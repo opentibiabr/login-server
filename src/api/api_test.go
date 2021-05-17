@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/gorilla/mux"
 	"github.com/opentibiabr/login-server/src/server"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"testing"
 )
@@ -32,9 +33,7 @@ func TestApi_GetName(t *testing.T) {
 				GrpcConnection:  tt.fields.GrpcConnection,
 				ServerInterface: tt.fields.ServerInterface,
 			}
-			if got := _api.GetName(); got != tt.want {
-				t.Errorf("GetName() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, _api.GetName())
 		})
 	}
 }

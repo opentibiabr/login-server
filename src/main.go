@@ -11,10 +11,8 @@ import (
 	"time"
 )
 
-type LoginServer interface {
-	Run(globalConfigs configs.GlobalConfigs) error
-	GetName() string
-}
+var numberOfServers = 2
+var initDelay = 200
 
 func main() {
 	logger.Init(configs.GetLogLevel())
@@ -22,7 +20,7 @@ func main() {
 	logger.Info("Loading configurations...")
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(numberOfServers)
 
 	gConfigs := configs.GetGlobalConfigs()
 
@@ -34,7 +32,7 @@ func main() {
 	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))
 	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
 
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(time.Duration(initDelay) * time.Millisecond)
 	gConfigs.Display()
 
 	// wait until WaitGroup is done

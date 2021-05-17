@@ -21,8 +21,6 @@ func processErrorResponse(
 	)
 
 	respondWithJSON(w, http.StatusOK, loginError)
-
-	return
 }
 
 func respondAndLog(w http.ResponseWriter, code int, payload interface{}, fields logrus.Fields) {

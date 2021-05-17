@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [ '**' ]
     paths-ignore:
-      - '**/README.md'
+      - '**.pb.go'
   push:
     branches: [main]
     paths-ignore:

@@ -3,6 +3,7 @@ package grpc_login_server
 import (
 	"context"
 	"github.com/opentibiabr/login-server/src/api/models"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
@@ -47,7 +48,7 @@ func BuildGrpcLoginResponsePayload(
 	return &login_proto_messages.LoginResponse{
 		PlayData: &login_proto_messages.PlayData{
 			Characters: characters,
-			Worlds:     models.BuildWorldsMessage(),
+			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
 		},
 		Session: session,
 	}

@@ -29,6 +29,7 @@ func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 		worlds = append(
 			worlds,
 			World{
+				ID:                         int(worldMsg.Id),
 				ExternalAddress:            worldMsg.ExternalAddress,
 				ExternalAddressProtected:   worldMsg.ExternalAddressProtected,
 				ExternalAddressUnprotected: worldMsg.ExternalAddressUnprotected,
@@ -44,12 +45,13 @@ func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 	return worlds
 }
 
-func BuildWorldsMessage() []*login_proto_messages.World {
-	return []*login_proto_messages.World{buildWorldMessage(configs.GetGameServerConfigs())}
+func BuildWorldsMessage(gameConfigs configs.GameServerConfigs) []*login_proto_messages.World {
+	return []*login_proto_messages.World{buildWorldMessage(gameConfigs, 0)}
 }
 
-func buildWorldMessage(gameConfigs configs.GameServerConfigs) *login_proto_messages.World {
+func buildWorldMessage(gameConfigs configs.GameServerConfigs, worldId int) *login_proto_messages.World {
 	return &login_proto_messages.World{
+		Id:                         uint32(worldId),
 		ExternalAddress:            gameConfigs.IP,
 		ExternalAddressProtected:   gameConfigs.IP,
 		ExternalAddressUnprotected: gameConfigs.IP,

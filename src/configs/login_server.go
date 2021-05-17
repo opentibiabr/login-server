@@ -48,8 +48,8 @@ func (loginServerConfigs *LoginServerConfigs) Format() string {
 }
 func GetLoginServerConfigs() LoginServerConfigs {
 	return LoginServerConfigs{
-		Http:        GetHttpLoginConfigs(),
-		Tcp:         GetTcpLoginConfigs(),
+		Http:        getHttpLoginConfigs(),
+		Tcp:         getTcpLoginConfigs(),
 		RateLimiter: GetRateLimiterConfigs(),
 	}
 }
@@ -61,7 +61,7 @@ func (httpLoginConfigs *HttpLoginConfigs) Format() string {
 		httpLoginConfigs.Port,
 	)
 }
-func GetHttpLoginConfigs() HttpLoginConfigs {
+func getHttpLoginConfigs() HttpLoginConfigs {
 	return HttpLoginConfigs{
 		Ip:   GetEnvStr(EnvLoginIpKey, ""),
 		Port: GetEnvInt(EnvLoginHttpPortKey, 80),
@@ -75,7 +75,7 @@ func (tcpLoginConfigs *TcpLoginConfigs) Format() string {
 		tcpLoginConfigs.Port,
 	)
 }
-func GetTcpLoginConfigs() TcpLoginConfigs {
+func getTcpLoginConfigs() TcpLoginConfigs {
 	return TcpLoginConfigs{
 		Ip:   GetEnvStr(EnvLoginIpKey, ""),
 		Port: GetEnvInt(EnvLoginTcpPortKey, 7171),

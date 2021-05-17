@@ -1,0 +1,72 @@
+syntax = "proto3";
+option go_package = "login_proto_messages/";
+package grpc.login_server;
+
+message Error {
+    uint32 code = 1;
+    string message = 2;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+    string type = 3;
+}
+
+message LoginResponse {
+    PlayData play_data = 1;
+    Session session = 2;
+    Error error = 3;
+}
+
+message PlayData {
+    repeated Character characters = 1;
+    repeated World worlds = 2;
+}
+
+message Session {
+    bool is_premium = 1;
+    uint32 premium_until = 2;
+    string session_key = 3;
+    uint32 last_login = 4;
+}
+
+message Character {
+    uint32 world_id = 1;
+    CharacterInfo info = 2;
+    CharacterOutfit outfit = 3;
+}
+
+message CharacterInfo {
+    string name = 1;
+    uint32 last_login = 2;
+    uint32 level = 3;
+    string vocation = 4;
+    uint32 sex = 5;
+}
+
+message CharacterOutfit {
+    uint32 look_type = 1;
+    uint32 look_head = 2;
+    uint32 look_body = 3;
+    uint32 look_legs = 4;
+    uint32 look_feet = 5;
+    uint32 addons = 6;
+}
+
+message World {
+    uint32 id = 1;
+    string name = 2;
+    string external_address = 3;
+    string external_address_protected = 4;
+    string external_address_unprotected = 5;
+    uint32 external_port = 6;
+    uint32 external_port_protected = 7;
+    uint32 external_port_unprotected = 8;
+    string location = 9;
+
+}
+
+service LoginService {
+    rpc Login(LoginRequest) returns (LoginResponse);
+}

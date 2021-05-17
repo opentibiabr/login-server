@@ -30,7 +30,7 @@ func (dbConfigs *DBConfigs) GetConnectionString() string {
 	)
 }
 
-func (dbConfigs *DBConfigs) Format() string {
+func (dbConfigs *DBConfigs) format() string {
 	return fmt.Sprintf(
 		"Database: %s:%d/%s",
 		dbConfigs.Host,

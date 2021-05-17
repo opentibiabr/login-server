@@ -23,7 +23,7 @@ func Init() error {
 }
 
 func (c *GlobalConfigs) Display() {
-	logger.Info(c.DBConfigs.Format())
+	logger.Info(c.DBConfigs.format())
 	logger.Info(c.GameServerConfigs.Format())
 	logger.Info(c.LoginServerConfigs.Format())
 }

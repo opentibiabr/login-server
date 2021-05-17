@@ -1,4 +1,4 @@
-package login
+package models
 
 type RequestPayload struct {
 	Email        string `json:"email"`
@@ -10,4 +10,14 @@ type RequestPayload struct {
 type ResponsePayload struct {
 	PlayData PlayData `json:"playdata"`
 	Session  Session  `json:"session"`
+}
+
+type LoginErrorPayload struct {
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
+}
+
+type PlayData struct {
+	Characters []CharacterPayload `json:"characters"`
+	Worlds     []World            `json:"worlds"`
 }

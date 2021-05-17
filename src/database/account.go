@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/models"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/logger"
 	"time"
 )
@@ -33,16 +34,29 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 		p,
 	)
 
-	return db.QueryRow(statement).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
+	err := db.QueryRow(statement).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (acc *Account) GetSession() login.Session {
-	return login.Session{
+func (acc *Account) GetSession() models.Session {
+	return models.Session{
 		IsPremium:      acc.PremDays > 0,
 		PremiumUntil:   acc.GetPremiumTime(),
 		SessionKey:     fmt.Sprintf("%s\n%s", acc.Email, acc.Password),
 		ShowRewardNews: true,
 		Status:         "active",
+	}
+}
+
+func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
+	return &login_proto_messages.Session{
+		IsPremium:    acc.PremDays > 0,
+		PremiumUntil: uint32(acc.GetPremiumTime()),
+		SessionKey:   fmt.Sprintf("%s\n%s", acc.Email, acc.Password),
 	}
 }
 

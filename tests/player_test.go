@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,15 +10,15 @@ import (
 func TestPlayerToCharacterPayload(t *testing.T) {
 	defNumber := 12
 
-	expectedCharacterPayload := login.CharacterPayload{
+	expectedCharacterPayload := models.CharacterPayload{
 		WorldID: 0,
-		CharacterInfo: login.CharacterInfo{
+		CharacterInfo: models.CharacterInfo{
 			Name:     "default_string",
 			Level:    12,
 			Vocation: "Knight Dawnport",
 			IsMale:   false,
 		},
-		Outfit: login.Outfit{
+		Outfit: models.Outfit{
 			OutfitID:    12,
 			HeadColor:   12,
 			TorsoColor:  12,

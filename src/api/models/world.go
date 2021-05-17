@@ -1,6 +1,6 @@
-package login
+package models
 
-import "github.com/opentibiabr/login-server/src/configs"
+import "github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 
 type World struct {
 	AntiCheatProtection        bool   `json:"anticheatprotection"`
@@ -20,16 +20,23 @@ type World struct {
 	RestrictedStore            bool   `json:"restrictedstore"`
 }
 
-func LoadWorld() World {
-	gameConfigs := configs.GetGameServerConfigs()
-	return World{
-		ExternalAddress:            gameConfigs.IP,
-		ExternalAddressProtected:   gameConfigs.IP,
-		ExternalAddressUnprotected: gameConfigs.IP,
-		ExternalPort:               gameConfigs.Port,
-		ExternalPortProtected:      gameConfigs.Port,
-		ExternalPortUnprotected:    gameConfigs.Port,
-		Location:                   gameConfigs.Location,
-		Name:                       gameConfigs.Name,
+func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
+	var worlds []World
+	for _, worldMsg := range worldsMsg {
+		worlds = append(
+			worlds,
+			World{
+				ExternalAddress:            worldMsg.ExternalAddress,
+				ExternalAddressProtected:   worldMsg.ExternalAddressProtected,
+				ExternalAddressUnprotected: worldMsg.ExternalAddressUnprotected,
+				ExternalPort:               int(worldMsg.ExternalPort),
+				ExternalPortProtected:      int(worldMsg.ExternalPortProtected),
+				ExternalPortUnprotected:    int(worldMsg.ExternalPortUnprotected),
+				Location:                   worldMsg.Location,
+				Name:                       worldMsg.Name,
+			},
+		)
 	}
+
+	return worlds
 }

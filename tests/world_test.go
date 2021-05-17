@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,7 +30,7 @@ func TestLoadWorld(t *testing.T) {
 		},
 	)
 
-	expectedWorld := login.World{
+	expectedWorld := models.World{
 		ExternalAddress:            defaultString,
 		ExternalAddressProtected:   defaultString,
 		ExternalAddressUnprotected: defaultString,

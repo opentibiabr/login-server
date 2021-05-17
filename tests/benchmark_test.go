@@ -14,7 +14,7 @@ var wg sync.WaitGroup
 var countOk = 0
 
 func asynRequest(payload []byte) {
-	res, _ := http.Post("http://127.0.0.1:80/login2", "application/json", bytes.NewBuffer(payload))
+	res, _ := http.Post("http://localhost:80/login", "application/json", bytes.NewBuffer(payload))
 
 	if res != nil && res.StatusCode == http.StatusOK {
 		countOk++

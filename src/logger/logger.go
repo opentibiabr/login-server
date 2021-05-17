@@ -21,7 +21,7 @@ func LogRequest(code int, payload interface{}, message string, fields log.Fields
 	fields["1"] = code
 	logger.WithFields(fields).Info(message)
 
-	fields["payload"] = payload
+	fields["5"] = payload
 	logger.WithFields(fields).Debug()
 }
 

@@ -1,4 +1,4 @@
-package api_errors
+package models
 
 type LoginErrorPayload struct {
 	ErrorCode    int    `json:"errorCode"`

@@ -26,7 +26,12 @@ func main() {
 
 	gConfigs := configs.GetGlobalConfigs()
 
-	go startServer(&wg, gConfigs, grpc_server.Initialize(gConfigs))
+	err := configs.Init()
+	if err != nil {
+		logger.Warn("Failed to load '.env' in dev environment, going with default.")
+	}
+
+	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))
 	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
 
 	time.Sleep(200 * time.Millisecond)

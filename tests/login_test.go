@@ -6,8 +6,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/opentibiabr/login-server/src/api"
-	"github.com/opentibiabr/login-server/src/api/api_errors"
 	"github.com/opentibiabr/login-server/src/api/login"
+	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -70,9 +70,9 @@ func TestLoginInvalidPayloadReturn400(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
-	) login.ResponsePayload {
+	) models.ResponsePayload {
 		count++
-		return login.ResponsePayload{}
+		return models.ResponsePayload{}
 	})
 
 	payload := []byte(`{"type"="login"}`)
@@ -95,16 +95,16 @@ func TestLoginInvalidCredentialsReturnLoginError(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
-	) login.ResponsePayload {
+	) models.ResponsePayload {
 		count++
-		return login.ResponsePayload{}
+		return models.ResponsePayload{}
 	})
 
 	payload := []byte(`{"type":"login"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
-	var m api_errors.LoginErrorPayload
+	var m models.LoginErrorPayload
 	err := json.Unmarshal(response.Body.Bytes(), &m)
 	if err != nil {
 		log.Print("Error on parse bytes")
@@ -141,16 +141,16 @@ func TestLoginValidCredentials(t *testing.T) {
 	monkey.Patch(api.BuildLoginResponsePayload, func(
 		acc database.Account,
 		players database.Players,
-	) login.ResponsePayload {
+	) models.ResponsePayload {
 		count++
-		return login.ResponsePayload{}
+		return models.ResponsePayload{}
 	})
 
 	payload := []byte(`{"type":"login","email":"@god","password":"2"}`)
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
-	var m login.ResponsePayload
+	var m models.ResponsePayload
 	err := json.Unmarshal(response.Body.Bytes(), &m)
 	if err != nil {
 		log.Print("Error on parse bytes")

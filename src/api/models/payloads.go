@@ -1,4 +1,4 @@
-package login
+package models
 
 type RequestPayload struct {
 	Email        string `json:"email"`

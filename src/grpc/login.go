@@ -1,19 +1,20 @@
-package grpc_server
+package grpc_login_server
 
 import (
 	"context"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
-	"github.com/opentibiabr/login-server/src/grpc/proto"
-	"github.com/opentibiabr/login-server/src/logger"
-	"google.golang.org/grpc"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
 
-func (ls *GrpcServer) Login(ctx context.Context, in *proto.LoginRequest) (*proto.LoginResponse, error) {
+const DefaultLoginErrorCode = 3
+
+func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginRequest) (*login_proto_messages.LoginResponse, error) {
 	acc, err := database.LoadAccount(in.Email, in.Password, ls.DB)
 	if err != nil {
-		return &proto.LoginResponse{
-			Error: &proto.Error{
-				Code:    3,
+		return &login_proto_messages.LoginResponse{
+			Error: &login_proto_messages.Error{
+				Code:    DefaultLoginErrorCode,
 				Message: err.Error(),
 			},
 		}, nil
@@ -26,29 +27,45 @@ func (ls *GrpcServer) Login(ctx context.Context, in *proto.LoginRequest) (*proto
 		return nil, err
 	}
 
-	return &proto.LoginResponse{
-		PlayData: &proto.PlayData{
-			Characters: []*proto.Character{
-				{
-					Info: &proto.CharacterInfo{
-						Name: "Junior",
-					},
-				},
-			},
-		},
-		Session: &proto.Session{},
-	}, nil
+	return buildLoginResponsePayload(acc.GetGrpcSession(), *players), nil
 }
 
-func Client(request *proto.LoginRequest) (*proto.LoginResponse, error) {
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":7171", grpc.WithInsecure())
-	if err != nil {
-		logger.Fatal(err)
+func buildLoginResponsePayload(
+	session *login_proto_messages.Session,
+	players database.Players,
+) *login_proto_messages.LoginResponse {
+	var characters []*login_proto_messages.Character
+	for _, player := range players.Players {
+		character := player.ToCharacterMessage()
+		characters = append(characters, character)
+
+		if session.LastLogin < character.Info.LastLogin {
+			session.LastLogin = character.Info.LastLogin
+		}
 	}
-	defer conn.Close()
 
-	c := proto.NewLoginServiceClient(conn)
+	return &login_proto_messages.LoginResponse{
+		PlayData: &login_proto_messages.PlayData{
+			Characters: characters,
+			Worlds:     loadWorldsMessage(),
+		},
+		Session: session,
+	}
+}
 
-	return c.Login(context.Background(), request)
+func loadWorldsMessage() []*login_proto_messages.World {
+	return []*login_proto_messages.World{loadWorldMessage(configs.GetGameServerConfigs())}
+}
+
+func loadWorldMessage(gameConfigs configs.GameServerConfigs) *login_proto_messages.World {
+	return &login_proto_messages.World{
+		ExternalAddress:            gameConfigs.IP,
+		ExternalAddressProtected:   gameConfigs.IP,
+		ExternalAddressUnprotected: gameConfigs.IP,
+		ExternalPort:               uint32(gameConfigs.Port),
+		ExternalPortProtected:      uint32(gameConfigs.Port),
+		ExternalPortUnprotected:    uint32(gameConfigs.Port),
+		Location:                   gameConfigs.Location,
+		Name:                       gameConfigs.Name,
+	}
 }

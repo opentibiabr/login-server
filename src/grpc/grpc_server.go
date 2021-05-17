@@ -1,32 +1,25 @@
-package grpc_server
+package grpc_login_server
 
 import (
 	"database/sql"
 	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/definitions"
-	"github.com/opentibiabr/login-server/src/grpc/proto"
-	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"google.golang.org/grpc"
 	"net"
 )
 
 type GrpcServer struct {
 	DB *sql.DB
-	proto.LoginServiceServer
+	login_proto_messages.LoginServiceServer
 	definitions.ServerInterface
 }
 
 func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 	var ls GrpcServer
-	err := configs.Init()
-	if err != nil {
-		logger.Warn("Failed to load '.env' in dev environment, going with default.")
-	}
 
-	ls.DB, err = sql.Open("mysql", gConfigs.DBConfigs.GetConnectionString())
-	if err != nil {
-		logger.Fatal(err)
-	}
+	ls.DB = database.PullConnection(gConfigs)
 
 	return &ls
 }
@@ -39,7 +32,7 @@ func (ls *GrpcServer) Run(gConfigs configs.GlobalConfigs) error {
 	}
 
 	server := grpc.NewServer()
-	proto.RegisterLoginServiceServer(server, ls)
+	login_proto_messages.RegisterLoginServiceServer(server, ls)
 
 	return server.Serve(c)
 }

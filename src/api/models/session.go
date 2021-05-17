@@ -1,4 +1,6 @@
-package login
+package models
+
+import "github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 
 type Session struct {
 	EmailCodeRequest              bool   `json:"emailcoderequest"`
@@ -14,4 +16,13 @@ type Session struct {
 	Status                        string `json:"status"`
 	TournamentTicketPurchaseState int    `json:"tournamentticketpurchasestate"`
 	TournamentCyclePhase          int    `json:"tournamentcyclephase"`
+}
+
+func LoadSessionFromMessage(sessionMsg *login_proto_messages.Session) Session {
+	return Session{
+		IsPremium:     sessionMsg.IsPremium,
+		PremiumUntil:  int(sessionMsg.PremiumUntil),
+		SessionKey:    sessionMsg.SessionKey,
+		LastLoginTime: int(sessionMsg.LastLogin),
+	}
 }

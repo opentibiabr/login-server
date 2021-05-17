@@ -1,4 +1,4 @@
-package login
+package models
 
 type PlayData struct {
 	Characters []CharacterPayload `json:"characters"`

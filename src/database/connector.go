@@ -6,7 +6,7 @@ import (
 	"github.com/opentibiabr/login-server/src/logger"
 )
 
-const DefaultMaxDbOpenConns = 50
+const DefaultMaxDbOpenConns = 100
 
 func PullConnection(gConfigs configs.GlobalConfigs) *sql.DB {
 	DB, err := sql.Open("mysql", gConfigs.DBConfigs.GetConnectionString())

@@ -28,7 +28,9 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return nil, err
 	}
 
-	return BuildGrpcLoginResponsePayload(acc.GetGrpcSession(), *players), nil
+	res := BuildGrpcLoginResponsePayload(acc.GetGrpcSession(), *players)
+
+	return res, nil
 }
 
 func BuildGrpcLoginResponsePayload(

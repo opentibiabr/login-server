@@ -35,7 +35,7 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	logger.WithFields(logrus.Fields{
 		"0": "gRPC",
 		"1": "login",
-	}).Info("processed")
+	}).Debug("processed")
 
 	return res, nil
 }

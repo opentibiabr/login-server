@@ -2,25 +2,24 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
-	"github.com/opentibiabr/login-server/src/logger"
 	"net/http"
-	"time"
 )
 
-func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	payload, err := validateLoginPayload(r)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err)
+func (_api *Api) login(c *gin.Context) {
+	var payload models.RequestPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	defer r.Body.Close()
+	if payload.Type != "login" {
+		c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
+		return
+	}
 
 	grpcClient := login_proto_messages.NewLoginServiceClient(_api.GrpcConnection)
 
@@ -30,38 +29,16 @@ func (_api *Api) login(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if res.GetError() != nil {
-		processErrorResponse(w, buildErrorPayloadFromMessage(res), logger.BuildRequestLogFields(r, start))
+		c.JSON(http.StatusOK, buildErrorPayloadFromMessage(res))
 		return
 	}
 
-	respondAndLog(
-		w,
-		http.StatusOK,
-		buildPayloadFromMessage(res),
-		logger.BuildRequestLogFields(r, start),
-	)
-}
-
-func validateLoginPayload(r *http.Request) (*models.RequestPayload, error) {
-	var payload models.RequestPayload
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&payload); err != nil {
-		logger.Error(err)
-		return nil, errors.New("Invalid request payload")
-	}
-
-	if payload.Type != "login" {
-		r.Body.Close()
-		return nil, errors.New("Non-login requests are not accepted")
-	}
-
-	return &payload, nil
+	c.JSON(http.StatusOK, buildPayloadFromMessage(res))
 }
 
 func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse) models.ResponsePayload {

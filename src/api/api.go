@@ -35,6 +35,8 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	ipLimiter.Init()
 
+	gin.SetMode(gin.ReleaseMode)
+
 	_api.Router = gin.New()
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())

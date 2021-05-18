@@ -63,5 +63,6 @@ func (rl *IPRateLimiter) Limit() gin.HandlerFunc {
 		if !limiter.Allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
 		}
+		c.Next()
 	}
 }

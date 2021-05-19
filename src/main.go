@@ -22,12 +22,12 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(numberOfServers)
 
-	gConfigs := configs.GetGlobalConfigs()
-
 	err := configs.Init()
 	if err != nil {
 		logger.Debug("Failed to load '.env' in dev environment, going with default.")
 	}
+
+	gConfigs := configs.GetGlobalConfigs()
 
 	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))
 	go startServer(&wg, gConfigs, api.Initialize(gConfigs))

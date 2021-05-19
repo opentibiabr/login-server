@@ -2,7 +2,7 @@ package api
 
 import (
 	"database/sql"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/server"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -11,7 +11,7 @@ import (
 
 func TestApi_GetName(t *testing.T) {
 	type fields struct {
-		Router          *mux.Router
+		Router          *gin.Engine
 		DB              *sql.DB
 		GrpcConnection  *grpc.ClientConn
 		ServerInterface server.ServerInterface

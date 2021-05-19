@@ -1,10 +1,8 @@
 package limiter
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/logger"
-	"github.com/sirupsen/logrus"
-	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -57,21 +55,14 @@ func (rl *IPRateLimiter) cleanupVisitors() {
 	}
 }
 
-func (rl *IPRateLimiter) Limit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			logger.Error(err)
-			ip = ""
-		}
+func (rl *IPRateLimiter) Limit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
 
 		limiter := rl.getVisitor(ip)
 		if !limiter.Allow() {
-			logger.WithFields(logrus.Fields{"ip": ip}).Info("too many requests")
-			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-			return
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
 		}
-
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 }

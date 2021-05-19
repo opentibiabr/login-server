@@ -22,12 +22,12 @@ func TestGameServerConfigs_Format(t *testing.T) {
 	}{{
 		name: "Format game server configs",
 		fields: fields{
-			Port:     7171,
+			Port:     7172,
 			Name:     "superb",
 			IP:       "0.0.0.0",
 			Location: "JPN",
 		},
-		want: "Connected with superb server 0.0.0.0:7171 - JPN",
+		want: "Connected with superb server 0.0.0.0:7172 - JPN",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

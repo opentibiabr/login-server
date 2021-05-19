@@ -8,15 +8,15 @@ services:
     restart: unless-stopped
     ports:
       - 80:80
-      - 7171:7171
+      - 9090:9090
     environment:
       - LOGIN_HTTP_PORT=80
-      - LOGIN_TCP_PORT=7171
-      - DB_HOSTNAME=mysql
-      - DB_PORT=3306
-      - DB_DATABASE=canary
-      - DB_USERNAME=canary
-      - DB_PASSWORD=canary
+      - LOGIN_GRPC_PORT=9090
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DBNAME=canary
+      - MYSQL_USER=canary
+      - MYSQL_PASS=canary
       - SERVER_NAME=Canary
       - SERVER_IP=127.0.0.1
       - SERVER_PORT=7172

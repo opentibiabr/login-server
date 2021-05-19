@@ -28,7 +28,7 @@ func setGameConfigs() {
 		[]string{
 			EnvServerPortKey,
 			EnvLoginHttpPortKey,
-			EnvLoginTcpPortKey,
+			EnvLoginGrpcPortKey,
 			EnvRateLimiterBurstKey,
 			EnvRateLimiterRateKey,
 			EnvDBPortKey,
@@ -49,7 +49,7 @@ func unsetGameConfigs() {
 			EnvDBPassKey,
 			EnvServerPortKey,
 			EnvLoginHttpPortKey,
-			EnvLoginTcpPortKey,
+			EnvLoginGrpcPortKey,
 			EnvRateLimiterBurstKey,
 			EnvRateLimiterRateKey,
 			EnvDBPortKey,
@@ -184,9 +184,9 @@ func TestGetGlobalConfigs(t *testing.T) {
 					Ip:   "",
 					Port: 80,
 				},
-				Tcp: TcpLoginConfigs{
+				Grpc: GrpcLoginConfigs{
 					Ip:   "",
-					Port: 7171,
+					Port: 9090,
 				},
 				RateLimiter: RateLimiter{
 					Burst: 5,
@@ -215,7 +215,7 @@ func TestGetGlobalConfigs(t *testing.T) {
 					Ip:   defaultString,
 					Port: defaultNumber,
 				},
-				Tcp: TcpLoginConfigs{
+				Grpc: GrpcLoginConfigs{
 					Ip:   defaultString,
 					Port: defaultNumber,
 				},

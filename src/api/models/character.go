@@ -5,60 +5,57 @@ import (
 )
 
 type CharacterPayload struct {
-	WorldID int `json:"worldid"`
+	WorldID uint32 `json:"worldid"`
 	CharacterInfo
 	Outfit
 	TournamentInfo
 }
 
 type CharacterInfo struct {
-	DailyRewardState int    `json:"dailyrewardstate"`
+	DailyRewardState uint32 `json:"dailyrewardstate"`
 	IsHidden         bool   `json:"ishidden"`
 	IsMainCharacter  bool   `json:"ismaincharacter"`
-	IsMale           bool   `json:"ismale"`
-	Level            int    `json:"level"`
+	IsMale           bool   `json:"ismale" proto:"Sex" proto_func:"isMale"`
+	Level            uint32 `json:"level"`
 	Name             string `json:"name"`
 	Tutorial         bool   `json:"tutorial"`
 	Vocation         string `json:"vocation"`
 }
 
 type Outfit struct {
-	OutfitID    int `json:"outfitid"`
-	AddonsFlags int `json:"addonsflags"`
-	DetailColor int `json:"detailcolor"`
-	HeadColor   int `json:"headcolor"`
-	LegsColor   int `json:"legscolor"`
-	TorsoColor  int `json:"torsocolor"`
+	OutfitID    uint32 `json:"outfitid" proto:"LookType"`
+	AddonsFlags uint32 `json:"addonsflags" proto:"LookHead"`
+	DetailColor uint32 `json:"detailcolor" proto:"LookBody"`
+	HeadColor   uint32 `json:"headcolor" proto:"LookLegs"`
+	LegsColor   uint32 `json:"legscolor" proto:"LookFeet"`
+	TorsoColor  uint32 `json:"torsocolor" proto:"Addons"`
 }
 
 type TournamentInfo struct {
-	IsTournamentParticipant          bool `json:"istournamentparticipant"`
-	RemainingDailyTournamentPlayTime int  `json:"remainingdailytournamentplaytime"`
+	IsTournamentParticipant          bool   `json:"istournamentparticipant"`
+	RemainingDailyTournamentPlayTime uint32 `json:"remainingdailytournamentplaytime"`
 }
 
 func LoadCharactersFromMessage(charactersMsg []*login_proto_messages.Character) []CharacterPayload {
 	var characters []CharacterPayload
 	for _, characterMsg := range charactersMsg {
-		characters = append(
-			characters,
-			CharacterPayload{
-				WorldID: int(characterMsg.GetWorldId()),
-				CharacterInfo: CharacterInfo{
-					Name:     characterMsg.GetInfo().GetName(),
-					Level:    int(characterMsg.GetInfo().GetLevel()),
-					Vocation: characterMsg.GetInfo().GetVocation(),
-					IsMale:   int(characterMsg.GetInfo().GetSex()) == 1,
-				},
-				Outfit: Outfit{
-					OutfitID:    int(characterMsg.GetOutfit().GetLookType()),
-					HeadColor:   int(characterMsg.GetOutfit().GetLookHead()),
-					TorsoColor:  int(characterMsg.GetOutfit().GetLookBody()),
-					LegsColor:   int(characterMsg.GetOutfit().GetLookLegs()),
-					DetailColor: int(characterMsg.GetOutfit().GetLookFeet()),
-					AddonsFlags: int(characterMsg.GetOutfit().GetAddons()),
-				},
-			})
+		characters = append(characters, loadCharacterFromMessage(characterMsg))
 	}
-
 	return characters
+}
+
+func loadCharacterFromMessage(characterMsg *login_proto_messages.Character) CharacterPayload {
+	return CharacterPayload{
+		WorldID:       characterMsg.GetWorldId(),
+		CharacterInfo: loadCharacterInfoFromMessage(characterMsg.GetInfo()),
+		Outfit:        loadOutfitInfoFromMessage(characterMsg.GetOutfit()),
+	}
+}
+
+func loadCharacterInfoFromMessage(characterInfoMsg *login_proto_messages.CharacterInfo) CharacterInfo {
+	return *FromProtoConvertor(characterInfoMsg, &CharacterInfo{}).(*CharacterInfo)
+}
+
+func loadOutfitInfoFromMessage(outfitInfoMsg *login_proto_messages.CharacterOutfit) Outfit {
+	return *FromProtoConvertor(outfitInfoMsg, &Outfit{}).(*Outfit)
 }

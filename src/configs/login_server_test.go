@@ -85,9 +85,9 @@ func TestGetLoginServerConfigs(t *testing.T) {
 				Ip:   "",
 				Port: 80,
 			},
-			Tcp: TcpLoginConfigs{
+			Grpc: GrpcLoginConfigs{
 				Ip:   "",
-				Port: 7171,
+				Port: 9090,
 			},
 			RateLimiter: RateLimiter{
 				Burst: 5,
@@ -120,20 +120,20 @@ func TestGetRateLimiterConfigs(t *testing.T) {
 	}
 }
 
-func TestGetTcpLoginConfigs(t *testing.T) {
+func TestGetGrpcLoginConfigs(t *testing.T) {
 	tests := []struct {
 		name string
-		want TcpLoginConfigs
+		want GrpcLoginConfigs
 	}{{
-		name: "Default Tcp Configs",
-		want: TcpLoginConfigs{
+		name: "Default Grpc Configs",
+		want: GrpcLoginConfigs{
 			Ip:   "",
-			Port: 7171,
+			Port: 9090,
 		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, getTcpLoginConfigs())
+			assert.Equal(t, tt.want, getGrpcLoginConfigs())
 		})
 	}
 }
@@ -171,7 +171,7 @@ func TestHttpLoginConfigs_Format(t *testing.T) {
 func TestLoginServerConfigs_Format(t *testing.T) {
 	type fields struct {
 		Http        HttpLoginConfigs
-		Tcp         TcpLoginConfigs
+		Grpc        GrpcLoginConfigs
 		RateLimiter RateLimiter
 		Config      Config
 	}
@@ -186,9 +186,9 @@ func TestLoginServerConfigs_Format(t *testing.T) {
 				Ip:   "0.0.0.0",
 				Port: 8080,
 			},
-			Tcp: TcpLoginConfigs{
+			Grpc: GrpcLoginConfigs{
 				Ip:   "0.0.0.0",
-				Port: 7171,
+				Port: 9090,
 			},
 			RateLimiter: RateLimiter{
 				Rate:  10,
@@ -196,13 +196,13 @@ func TestLoginServerConfigs_Format(t *testing.T) {
 			},
 		},
 		want: "OTBR Login Server running!!! http: 0.0.0.0:8080 |" +
-			" tcp: 0.0.0.0:7171 | rate limit: 10/30",
+			" gRPC: 0.0.0.0:9090 | rate limit: 10/30",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			loginServerConfigs := &LoginServerConfigs{
 				Http:        tt.fields.Http,
-				Tcp:         tt.fields.Tcp,
+				Grpc:        tt.fields.Grpc,
 				RateLimiter: tt.fields.RateLimiter,
 				Config:      tt.fields.Config,
 			}
@@ -241,7 +241,7 @@ func TestRateLimiter_Format(t *testing.T) {
 	}
 }
 
-func TestTcpLoginConfigs_Format(t *testing.T) {
+func TestGrpcLoginConfigs_Format(t *testing.T) {
 	type fields struct {
 		Ip     string
 		Port   int
@@ -252,7 +252,7 @@ func TestTcpLoginConfigs_Format(t *testing.T) {
 		fields fields
 		want   string
 	}{{
-		name: "Tcp Login Configs Format",
+		name: "Grpc Login Configs Format",
 		fields: fields{
 			Ip:   "1.1.1.1",
 			Port: 53201,
@@ -261,12 +261,12 @@ func TestTcpLoginConfigs_Format(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tcpLoginConfigs := &TcpLoginConfigs{
+			grpcLoginConfigs := &GrpcLoginConfigs{
 				Ip:     tt.fields.Ip,
 				Port:   tt.fields.Port,
 				Config: tt.fields.Config,
 			}
-			assert.Equal(t, tt.want, tcpLoginConfigs.Format())
+			assert.Equal(t, tt.want, grpcLoginConfigs.Format())
 		})
 	}
 }

@@ -4,11 +4,11 @@ import (
 	"fmt"
 )
 
-const EnvDBHostKey = "DB_HOSTNAME"
-const EnvDBNameKey = "DB_DATABASE"
-const EnvDBPassKey = "DB_PASSWORD"
-const EnvDBPortKey = "DB_PORT"
-const EnvDBUserKey = "DB_USERNAME"
+const EnvDBHostKey = "MYSQL_HOST"
+const EnvDBNameKey = "MYSQL_DBNAME"
+const EnvDBPassKey = "MYSQL_PASS"
+const EnvDBPortKey = "MYSQL_PORT"
+const EnvDBUserKey = "MYSQL_USER"
 
 type DBConfigs struct {
 	Host string
@@ -21,7 +21,7 @@ type DBConfigs struct {
 
 func (dbConfigs *DBConfigs) GetConnectionString() string {
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		dbConfigs.User,
 		dbConfigs.Pass,
 		dbConfigs.Host,

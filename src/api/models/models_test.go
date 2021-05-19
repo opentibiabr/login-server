@@ -5,29 +5,29 @@ import (
 )
 
 var defaultString = "default"
-var defaultNumber = 10
+var defaultNumber = uint32(10)
 
 var outfitMsg = login_proto_messages.CharacterOutfit{
-	LookType: uint32(defaultNumber),
-	LookHead: uint32(defaultNumber),
-	LookBody: uint32(defaultNumber),
-	LookLegs: uint32(defaultNumber),
-	LookFeet: uint32(defaultNumber),
-	Addons:   uint32(defaultNumber),
+	LookType: defaultNumber,
+	LookHead: defaultNumber,
+	LookBody: defaultNumber,
+	LookLegs: defaultNumber,
+	LookFeet: defaultNumber,
+	Addons:   defaultNumber,
 }
 
 func createCharacterInfo(sex uint32) *login_proto_messages.CharacterInfo {
 	return &login_proto_messages.CharacterInfo{
 		Name:     defaultString,
-		Level:    uint32(defaultNumber),
+		Level:    defaultNumber,
 		Vocation: defaultString,
-		Sex:      uint32(sex),
+		Sex:      sex,
 	}
 }
 
 func createCharacterMessage(sex uint32) *login_proto_messages.Character {
 	return &login_proto_messages.Character{
-		WorldId: uint32(defaultNumber),
+		WorldId: defaultNumber,
 		Outfit:  &outfitMsg,
 		Info:    createCharacterInfo(sex),
 	}
@@ -36,18 +36,18 @@ func createCharacterMessage(sex uint32) *login_proto_messages.Character {
 func createSessionMessage(isPremium bool) *login_proto_messages.Session {
 	return &login_proto_messages.Session{
 		IsPremium:    isPremium,
-		PremiumUntil: uint32(defaultNumber),
+		PremiumUntil: defaultNumber,
 		SessionKey:   defaultString,
-		LastLogin:    uint32(defaultNumber),
+		LastLogin:    defaultNumber,
 	}
 }
 
-func createWorldMessage(id int) *login_proto_messages.World {
+func createWorldMessage(id uint32) *login_proto_messages.World {
 	return &login_proto_messages.World{
-		Id:                         uint32(id),
-		ExternalPort:               uint32(defaultNumber),
-		ExternalPortProtected:      uint32(defaultNumber),
-		ExternalPortUnprotected:    uint32(defaultNumber),
+		Id:                         id,
+		ExternalPort:               defaultNumber,
+		ExternalPortProtected:      defaultNumber,
+		ExternalPortUnprotected:    defaultNumber,
 		ExternalAddress:            defaultString,
 		ExternalAddressProtected:   defaultString,
 		ExternalAddressUnprotected: defaultString,

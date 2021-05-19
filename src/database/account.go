@@ -11,11 +11,12 @@ import (
 )
 
 type Account struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	PremDays int    `json:"premdays"`
-	LastDay  int    `json:"lastday"`
+	ID        uint32 `json:"id"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	PremDays  uint32 `json:"premdays"`
+	LastDay   uint32 `json:"lastday"`
+	LastLogin uint32
 }
 
 const secondsInADay = 24 * 60 * 60
@@ -44,14 +45,15 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
 	return &login_proto_messages.Session{
 		IsPremium:    acc.PremDays > 0,
-		PremiumUntil: uint32(acc.GetPremiumTime()),
+		PremiumUntil: acc.GetPremiumTime(),
 		SessionKey:   fmt.Sprintf("%s\n%s", acc.Email, acc.Password),
+		LastLogin:    acc.LastLogin,
 	}
 }
 
-func (acc *Account) GetPremiumTime() int {
+func (acc *Account) GetPremiumTime() uint32 {
 	if acc.PremDays > 0 {
-		return int(time.Now().UnixNano()/million) + acc.PremDays*secondsInADay
+		return uint32(time.Now().UnixNano()/million) + acc.PremDays*secondsInADay
 	}
 	return 0
 }

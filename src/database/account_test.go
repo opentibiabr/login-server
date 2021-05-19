@@ -10,11 +10,11 @@ import (
 
 func TestAccount_GetGrpcSession(t *testing.T) {
 	type fields struct {
-		ID       int
+		ID       uint32
 		Email    string
 		Password string
-		PremDays int
-		LastDay  int
+		PremDays uint32
+		LastDay  uint32
 	}
 	tests := []struct {
 		name   string
@@ -29,19 +29,7 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 		},
 		want: &login_proto_messages.Session{
 			IsPremium:    false,
-			PremiumUntil: uint32(0),
-			SessionKey:   "a@a.com\n123456",
-		},
-	}, {
-		name: "Get session negative prem days",
-		fields: fields{
-			PremDays: -125,
-			Email:    "a@a.com",
-			Password: "123456",
-		},
-		want: &login_proto_messages.Session{
-			IsPremium:    false,
-			PremiumUntil: uint32(0),
+			PremiumUntil: 0,
 			SessionKey:   "a@a.com\n123456",
 		},
 	}, {
@@ -53,7 +41,7 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 		},
 		want: &login_proto_messages.Session{
 			IsPremium:    true,
-			PremiumUntil: uint32(86400),
+			PremiumUntil: 86400,
 			SessionKey:   "a@a.com\n123456",
 		},
 	}}
@@ -78,23 +66,19 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 
 func TestAccount_GetPremiumTime(t *testing.T) {
 	type fields struct {
-		ID       int
+		ID       uint32
 		Email    string
 		Password string
-		PremDays int
-		LastDay  int
+		PremDays uint32
+		LastDay  uint32
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   int
+		want   uint32
 	}{{
 		name:   "Premium time 0 returns 0",
 		fields: fields{PremDays: 0},
-		want:   0,
-	}, {
-		name:   "Negative premium time returns 0",
-		fields: fields{PremDays: -125},
 		want:   0,
 	}, {
 		name:   "Remaining premium returns today + remaining seconds",

@@ -3,8 +3,8 @@ package logger
 import (
 	"fmt"
 	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 	"time"
 )
 
@@ -15,14 +15,6 @@ func Init(level log.Level) {
 	logger.SetFormatter(&nested.Formatter{
 		HideKeys: true,
 	})
-}
-
-func LogRequest(code int, payload interface{}, message string, fields log.Fields) {
-	fields["1"] = code
-	logger.WithFields(fields).Info(message)
-
-	fields["5"] = payload
-	logger.WithFields(fields).Debug()
 }
 
 func WithFields(fields log.Fields) *log.Entry {
@@ -45,14 +37,22 @@ func Error(err error) {
 	logger.Error(err.Error())
 }
 
-func Fatal(err error) {
-	logger.Error(err.Error())
+func Panic(err error) {
+	logger.Panic(err.Error())
 }
 
-func BuildRequestLogFields(r *http.Request, start time.Time) log.Fields {
-	return log.Fields{
-		"2": "web-server",
-		"3": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
-		"4": fmt.Sprintf("%s %s", r.Method, r.URL),
+func LogRequest() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		c.Next()
+
+		logger.WithFields(log.Fields{
+			"0": c.Writer.Status(),
+			"1": "web-server",
+			"2": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
+			"3": c.ClientIP(),
+			"4": c.Request.Method,
+		}).Info(c.Request.URL.Path)
 	}
 }

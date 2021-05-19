@@ -3,8 +3,8 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/mux"
 	"github.com/opentibiabr/login-server/src/api/limiter"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
@@ -16,7 +16,7 @@ import (
 )
 
 type Api struct {
-	Router         *mux.Router
+	Router         *gin.Engine
 	DB             *sql.DB
 	GrpcConnection *grpc.ClientConn
 	server.ServerInterface
@@ -35,13 +35,18 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	ipLimiter.Init()
 
-	_api.Router = mux.NewRouter()
+	gin.SetMode(gin.ReleaseMode)
+
+	_api.Router = gin.New()
+	_api.Router.Use(logger.LogRequest())
+	_api.Router.Use(gin.Recovery())
+	_api.Router.Use(ipLimiter.Limit())
+
 	_api.initializeRoutes()
-	_api.Router.Use(ipLimiter.Limit)
 
 	/* Generate HTTP/GRPC reverse proxy */
 
-	_api.GrpcConnection, err = grpc.Dial(gConfigs.LoginServerConfigs.Tcp.Format(), grpc.WithInsecure())
+	_api.GrpcConnection, err = grpc.Dial(gConfigs.LoginServerConfigs.Grpc.Format(), grpc.WithInsecure())
 	if err != nil {
 		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
 	}
@@ -68,6 +73,6 @@ func (_api *Api) GetName() string {
 }
 
 func (_api *Api) initializeRoutes() {
-	_api.Router.HandleFunc("/login", _api.login).Methods("POST")
-	_api.Router.HandleFunc("/login.php", _api.login).Methods("POST")
+	_api.Router.POST("/login", _api.login)
+	_api.Router.POST("/login.php", _api.login)
 }

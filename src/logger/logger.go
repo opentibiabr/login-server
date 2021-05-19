@@ -50,7 +50,7 @@ func LogRequest() gin.HandlerFunc {
 		logger.WithFields(log.Fields{
 			"0": c.Writer.Status(),
 			"1": "web-server",
-			"2": fmt.Sprintf("%dms", time.Now().Sub(start).Milliseconds()),
+			"2": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
 			"3": c.ClientIP(),
 			"4": c.Request.Method,
 		}).Info(c.Request.URL.Path)

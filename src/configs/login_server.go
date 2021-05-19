@@ -8,14 +8,14 @@ import (
 
 const EnvLoginIpKey = "LOGIN_IP"
 const EnvLoginHttpPortKey = "LOGIN_HTTP_PORT"
-const EnvLoginTcpPortKey = "LOGIN_TCP_PORT"
+const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
 
 const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
 const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
 
 type LoginServerConfigs struct {
 	Http        HttpLoginConfigs
-	Tcp         TcpLoginConfigs
+	Grpc        GrpcLoginConfigs
 	RateLimiter RateLimiter
 	Config
 }
@@ -26,7 +26,7 @@ type HttpLoginConfigs struct {
 	Config
 }
 
-type TcpLoginConfigs struct {
+type GrpcLoginConfigs struct {
 	Ip   string
 	Port int
 	Config
@@ -40,16 +40,16 @@ type RateLimiter struct {
 
 func (loginServerConfigs *LoginServerConfigs) Format() string {
 	return fmt.Sprintf(
-		"OTBR Login Server running!!! http: %s | tcp: %s | %s",
+		"OTBR Login Server running!!! http: %s | gRPC: %s | %s",
 		loginServerConfigs.Http.Format(),
-		loginServerConfigs.Tcp.Format(),
+		loginServerConfigs.Grpc.Format(),
 		loginServerConfigs.RateLimiter.Format(),
 	)
 }
 func GetLoginServerConfigs() LoginServerConfigs {
 	return LoginServerConfigs{
 		Http:        getHttpLoginConfigs(),
-		Tcp:         getTcpLoginConfigs(),
+		Grpc:        getGrpcLoginConfigs(),
 		RateLimiter: GetRateLimiterConfigs(),
 	}
 }
@@ -68,17 +68,17 @@ func getHttpLoginConfigs() HttpLoginConfigs {
 	}
 }
 
-func (tcpLoginConfigs *TcpLoginConfigs) Format() string {
+func (grpcLoginConfigs *GrpcLoginConfigs) Format() string {
 	return fmt.Sprintf(
 		"%s:%d",
-		tcpLoginConfigs.Ip,
-		tcpLoginConfigs.Port,
+		grpcLoginConfigs.Ip,
+		grpcLoginConfigs.Port,
 	)
 }
-func getTcpLoginConfigs() TcpLoginConfigs {
-	return TcpLoginConfigs{
+func getGrpcLoginConfigs() GrpcLoginConfigs {
+	return GrpcLoginConfigs{
 		Ip:   GetEnvStr(EnvLoginIpKey, ""),
-		Port: GetEnvInt(EnvLoginTcpPortKey, 7171),
+		Port: GetEnvInt(EnvLoginGrpcPortKey, 9090),
 	}
 }
 

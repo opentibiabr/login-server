@@ -1,11 +1,46 @@
 package models
 
 import (
+	"fmt"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"log"
 	"reflect"
 	"testing"
 )
+
+func TestPlayground(t *testing.T) {
+	type A struct {
+		B int
+		C string
+		D interface{}
+	}
+	type B struct {
+		E int         `random:"B"`
+		F string      `random:"C"`
+		G interface{} `random:"D"`
+	}
+
+	a := A{1, "ola", map[string]int{"d": 1}}
+	av := reflect.ValueOf(a)
+
+	b := B{}
+	pb := reflect.ValueOf(&b)
+	bv := pb.Elem()
+	//for j := 0; j < 1000000; j++ {
+	for i := 0; i < bv.NumField(); i++ {
+		bField := bv.Type().Field(i)
+		fmt.Printf("\n%v\n", bField.Type.Kind() == reflect.Int)
+		af := av.FieldByName(bField.Tag.Get("random"))
+		bf := bv.Field(i)
+		if af.IsValid() {
+			bf.Set(af)
+		}
+	}
+	//}
+
+	log.Printf("%v", b)
+}
 
 func TestBuildWorldsMessage(t *testing.T) {
 	type args struct {
@@ -19,19 +54,19 @@ func TestBuildWorldsMessage(t *testing.T) {
 	}{{
 		name: "build_default_worlds_message_id_0",
 		args: args{gameConfigs: configs.GameServerConfigs{
-			Port:     defaultNumber,
+			Port:     int(defaultNumber),
 			Name:     defaultString,
 			IP:       defaultString,
 			Location: defaultString,
 		}, worldId: 11},
 		want: []*login_proto_messages.World{{
-			Id:                         uint32(0),
+			Id:                         0,
 			ExternalAddress:            defaultString,
 			ExternalAddressProtected:   defaultString,
 			ExternalAddressUnprotected: defaultString,
-			ExternalPort:               uint32(defaultNumber),
-			ExternalPortProtected:      uint32(defaultNumber),
-			ExternalPortUnprotected:    uint32(defaultNumber),
+			ExternalPort:               defaultNumber,
+			ExternalPortProtected:      defaultNumber,
+			ExternalPortUnprotected:    defaultNumber,
 			Location:                   defaultString,
 			Name:                       defaultString,
 		}},
@@ -118,7 +153,7 @@ func TestLoadWorldsFromMessage(t *testing.T) {
 func Test_buildWorldMessage(t *testing.T) {
 	type args struct {
 		gameConfigs configs.GameServerConfigs
-		worldId     int
+		worldId     uint32
 	}
 	tests := []struct {
 		name string
@@ -127,38 +162,38 @@ func Test_buildWorldMessage(t *testing.T) {
 	}{{
 		name: "default_config_world_id_11",
 		args: args{gameConfigs: configs.GameServerConfigs{
-			Port:     defaultNumber,
+			Port:     int(defaultNumber),
 			Name:     defaultString,
 			IP:       defaultString,
 			Location: defaultString,
 		}, worldId: 11},
 		want: &login_proto_messages.World{
-			Id:                         uint32(11),
+			Id:                         11,
 			ExternalAddress:            defaultString,
 			ExternalAddressProtected:   defaultString,
 			ExternalAddressUnprotected: defaultString,
-			ExternalPort:               uint32(defaultNumber),
-			ExternalPortProtected:      uint32(defaultNumber),
-			ExternalPortUnprotected:    uint32(defaultNumber),
+			ExternalPort:               defaultNumber,
+			ExternalPortProtected:      defaultNumber,
+			ExternalPortUnprotected:    defaultNumber,
 			Location:                   defaultString,
 			Name:                       defaultString,
 		},
 	}, {
 		name: "mixed_configs_world_id_0",
 		args: args{gameConfigs: configs.GameServerConfigs{
-			Port:     7171,
+			Port:     7172,
 			Name:     "Earth",
 			IP:       "123.456.789.0",
 			Location: "Solar System",
 		}, worldId: 0},
 		want: &login_proto_messages.World{
-			Id:                         uint32(0),
+			Id:                         0,
 			ExternalAddress:            "123.456.789.0",
 			ExternalAddressProtected:   "123.456.789.0",
 			ExternalAddressUnprotected: "123.456.789.0",
-			ExternalPort:               uint32(7171),
-			ExternalPortProtected:      uint32(7171),
-			ExternalPortUnprotected:    uint32(7171),
+			ExternalPort:               7172,
+			ExternalPortProtected:      7172,
+			ExternalPortUnprotected:    7172,
 			Location:                   "Solar System",
 			Name:                       "Earth",
 		},

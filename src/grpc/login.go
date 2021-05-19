@@ -23,42 +23,24 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		}, nil
 	}
 
-	players := &database.Players{AccountID: acc.ID}
-
-	err = database.LoadPlayers(ls.DB, players)
+	characters, err := database.LoadPlayers(ls.DB, acc)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
-	res := BuildGrpcLoginResponsePayload(acc.GetGrpcSession(), *players)
+	res := login_proto_messages.LoginResponse{
+		PlayData: &login_proto_messages.PlayData{
+			Characters: characters,
+			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
+		},
+		Session: acc.GetGrpcSession(),
+	}
 
 	logger.WithFields(logrus.Fields{
 		"0": "gRPC",
 		"1": "login",
 	}).Debug("processed")
 
-	return res, nil
-}
-
-func BuildGrpcLoginResponsePayload(
-	session *login_proto_messages.Session,
-	players database.Players,
-) *login_proto_messages.LoginResponse {
-	var characters []*login_proto_messages.Character
-	for _, player := range players.Players {
-		character := player.ToCharacterMessage()
-		characters = append(characters, character)
-
-		if session.LastLogin < character.Info.LastLogin {
-			session.LastLogin = character.Info.LastLogin
-		}
-	}
-
-	return &login_proto_messages.LoginResponse{
-		PlayData: &login_proto_messages.PlayData{
-			Characters: characters,
-			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
-		},
-		Session: session,
-	}
+	return &res, nil
 }

@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
-	"reflect"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -22,6 +22,7 @@ func TestLoadSessionFromMessage(t *testing.T) {
 			PremiumUntil:  defaultNumber,
 			SessionKey:    defaultString,
 			LastLoginTime: defaultNumber,
+			Status:        "active",
 		}}, {
 		"is_premium",
 		args{createSessionMessage(true)},
@@ -30,13 +31,12 @@ func TestLoadSessionFromMessage(t *testing.T) {
 			PremiumUntil:  defaultNumber,
 			SessionKey:    defaultString,
 			LastLoginTime: defaultNumber,
+			Status:        "active",
 		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := LoadSessionFromMessage(tt.args.sessionMsg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("LoadSessionFromMessage() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, LoadSessionFromMessage(tt.args.sessionMsg))
 		})
 	}
 }

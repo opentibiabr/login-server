@@ -3,12 +3,13 @@ package api
 import (
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
 var defaultString = "default"
-var defaultNumber = 10
+var defaultNumber = uint32(10)
 
 func Test_buildErrorPayloadFromMessage(t *testing.T) {
 	type args struct {
@@ -77,28 +78,28 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 			},
 			PlayData: &login_proto_messages.PlayData{
 				Characters: []*login_proto_messages.Character{{
-					WorldId: uint32(defaultNumber),
+					WorldId: defaultNumber,
 					Info: &login_proto_messages.CharacterInfo{
 						Name:      defaultString,
 						Vocation:  defaultString,
-						Level:     uint32(defaultNumber),
-						LastLogin: uint32(defaultNumber),
-						Sex:       uint32(defaultNumber),
+						Level:     defaultNumber,
+						LastLogin: defaultNumber,
+						Sex:       defaultNumber,
 					},
 					Outfit: &login_proto_messages.CharacterOutfit{
-						LookType: uint32(defaultNumber),
-						LookHead: uint32(defaultNumber),
-						LookBody: uint32(defaultNumber),
-						LookLegs: uint32(defaultNumber),
-						LookFeet: uint32(defaultNumber),
-						Addons:   uint32(defaultNumber),
+						LookType: defaultNumber,
+						LookHead: defaultNumber,
+						LookBody: defaultNumber,
+						LookLegs: defaultNumber,
+						LookFeet: defaultNumber,
+						Addons:   defaultNumber,
 					},
 				}},
 				Worlds: []*login_proto_messages.World{{
-					Id:                         uint32(defaultNumber),
-					ExternalPort:               uint32(defaultNumber),
-					ExternalPortProtected:      uint32(defaultNumber),
-					ExternalPortUnprotected:    uint32(defaultNumber),
+					Id:                         defaultNumber,
+					ExternalPort:               defaultNumber,
+					ExternalPortProtected:      defaultNumber,
+					ExternalPortUnprotected:    defaultNumber,
 					Name:                       defaultString,
 					ExternalAddress:            defaultString,
 					ExternalAddressProtected:   defaultString,
@@ -163,7 +164,7 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 				OptionTracking:                false,
 				ReturnerNotification:          false,
 				ShowRewardNews:                false,
-				Status:                        "",
+				Status:                        "active",
 				TournamentTicketPurchaseState: 0,
 				TournamentCyclePhase:          0,
 			},
@@ -171,9 +172,7 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := buildPayloadFromMessage(tt.args.msg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildPayloadFromMessage() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, buildPayloadFromMessage(tt.args.msg))
 		})
 	}
 }

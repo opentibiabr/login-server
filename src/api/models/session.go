@@ -7,22 +7,17 @@ type Session struct {
 	FpsTracking                   bool   `json:"fpstracking"`
 	IsPremium                     bool   `json:"ispremium"`
 	IsReturner                    bool   `json:"isreturner"`
-	LastLoginTime                 int    `json:"lastlogintime"`
+	LastLoginTime                 uint32 `json:"lastlogintime" proto:"LastLogin"`
 	OptionTracking                bool   `json:"optiontracking"`
-	PremiumUntil                  int    `json:"premiumuntil"`
+	PremiumUntil                  uint32 `json:"premiumuntil"`
 	ReturnerNotification          bool   `json:"returnernotification"`
 	SessionKey                    string `json:"sessionkey"`
 	ShowRewardNews                bool   `json:"showrewardnews"`
 	Status                        string `json:"status"`
-	TournamentTicketPurchaseState int    `json:"tournamentticketpurchasestate"`
-	TournamentCyclePhase          int    `json:"tournamentcyclephase"`
+	TournamentTicketPurchaseState uint32 `json:"tournamentticketpurchasestate"`
+	TournamentCyclePhase          uint32 `json:"tournamentcyclephase"`
 }
 
 func LoadSessionFromMessage(sessionMsg *login_proto_messages.Session) Session {
-	return Session{
-		IsPremium:     sessionMsg.IsPremium,
-		PremiumUntil:  int(sessionMsg.PremiumUntil),
-		SessionKey:    sessionMsg.SessionKey,
-		LastLoginTime: int(sessionMsg.LastLogin),
-	}
+	return *FromProtoConvertor(sessionMsg, &Session{Status: "active"}).(*Session)
 }

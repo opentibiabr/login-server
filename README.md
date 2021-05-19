@@ -38,16 +38,16 @@ You can also download our docker image and apply the environment variables to yo
 
 |       NAME          |            HOW TO USE                |
 | :------------------ | :----------------------------------  |
-|`DB_DATABASE`        | `database default database name`     |
-|`DB_HOSTNAME`        | `database host`                      |
-|`DB_PORT`            | `database port`                      |
-|`DB_PASSWORD`        | `database password`                  |
-|`DB_USERNAME`        | `database username`                  |
+|`MYSQL_DBNAME`       | `database default database name`     |
+|`MYSQL_HOST`         | `database host`                      |
+|`MYSQL_PORT`         | `database port`                      |
+|`MYSQL_PASS`         | `database password`                  |
+|`MYSQL_USER`         | `database username`                  |
 |`ENV_LOG_LEVEL`      | `logrus log level for verbose` [ref](https://pkg.go.dev/github.com/sirupsen/logrus#Level)   |
 |`ENV_TYPE`           | `test/dev/prod uses .env if 'dev'`   |
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
-|`LOGIN_TCP_PORT`     | `login tcp port (to be implemented)` |
+|`LOGIN_GRPC_PORT`    | `login grpc port`                    |
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
 |`SERVER_IP`          | `game server IP address`             |
@@ -84,10 +84,10 @@ As you can see, we kept an average of 700 requests/s and a good availability, ev
 Another great aspect is that, comparing with the python login, our docker image is almost 10x smaller (15Mb). 
 
 ## gRPC
-From version 2.0.0 on, we start using gRPC protocol. It was initially prototyped to fit the TCP needs of the login-server, but it ended up being our choice as standard protocol.
-That said, the HTTP also runs on top of the gRPC layer, using a reversed proxy. That lead to a small gain in the availability without any performance loss.
+From version 2.0.0 on, we start using gRPC protocol. 
+The HTTP runs on top of the gRPC layer, using a reversed proxy. That lead to a small gain in the availability without any performance loss.
 
-In the TCP server we got a 10x performance boost, compared to the HTTP benchmarks:
+In the gRPC server we got a 10x performance boost, compared to the HTTP benchmarks:
 
 ![image](https://user-images.githubusercontent.com/34237492/118568814-e45a1700-b778-11eb-8b79-ddc26dde487c.png)
 

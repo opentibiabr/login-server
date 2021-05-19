@@ -25,7 +25,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 }
 
 func (ls *GrpcServer) Run(gConfigs configs.GlobalConfigs) error {
-	c, err := net.Listen("tcp", gConfigs.LoginServerConfigs.Tcp.Format())
+	c, err := net.Listen("tcp", gConfigs.LoginServerConfigs.Grpc.Format())
 
 	if err != nil {
 		return err

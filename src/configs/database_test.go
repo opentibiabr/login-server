@@ -22,20 +22,20 @@ func TestDBConfigs_Format(t *testing.T) {
 		name: "Format database properly",
 		fields: fields{
 			Host: "host",
-			Port: 7171,
+			Port: 3510,
 			Name: "mydb",
 		},
-		want: "Database: host:7171/mydb",
+		want: "Database: host:3510/mydb",
 	}, {
 		name: "Format database ignores user and pass",
 		fields: fields{
 			Host: "host",
-			Port: 7171,
+			Port: 3510,
 			Name: "mydb",
 			User: "user",
 			Pass: "pass",
 		},
-		want: "Database: host:7171/mydb",
+		want: "Database: host:3510/mydb",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -69,12 +69,12 @@ func TestDBConfigs_GetConnectionString(t *testing.T) {
 		name: "Build database connection string",
 		fields: fields{
 			Host: "host",
-			Port: 7171,
+			Port: 3510,
 			Name: "mydb",
 			User: "user",
 			Pass: "pass",
 		},
-		want: "user:pass@tcp(host:7171)/mydb",
+		want: "user:pass@tcp(host:3510)/mydb?parseTime=true",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -37,8 +37,8 @@ func Error(err error) {
 	logger.Error(err.Error())
 }
 
-func Fatal(err error) {
-	logger.Error(err.Error())
+func Panic(err error) {
+	logger.Panic(err.Error())
 }
 
 func LogRequest() gin.HandlerFunc {

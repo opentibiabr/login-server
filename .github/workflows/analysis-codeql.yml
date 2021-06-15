@@ -1,0 +1,40 @@
+---
+name: Analysis - CodeQL
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+      - devel
+      - develop
+
+env:
+  VCPKG_BUILD_TYPE: release
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  MAKEFLAGS: '-j 2'
+  NODE_OPTIONS: ' --max-old-space-size=8192 '
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['go']
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

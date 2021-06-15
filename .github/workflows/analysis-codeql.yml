@@ -6,8 +6,7 @@ on:
   push:
     branches:
       - master
-      - dev
-      - devel
+      - main
       - develop
 
 env:

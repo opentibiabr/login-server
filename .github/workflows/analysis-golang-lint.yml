@@ -5,7 +5,9 @@ on:
   pull_request:
   push:
     branches:
+      - master
       - main
+      - develop
 
 jobs:
   job:

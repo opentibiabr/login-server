@@ -1,0 +1,24 @@
+---
+name: Tests - Golang
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  job:
+    name: Run Golang Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [1.16.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run tests
+        run: go test ./...

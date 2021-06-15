@@ -1,11 +1,13 @@
-name: release
+---
+name: Release - Linux
+
 on:
   release:
     types: [created]
 
 jobs:
-  release-matrix:
-    name: release linux/amd64
+  job:
+    name: Linux
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,9 +17,13 @@ jobs:
         exclude:
           - goarch: "386"
             goos: darwin
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: wangyoucao577/go-release-action@v1.17
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build and Release
+        uses: wangyoucao577/go-release-action@v1.17
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}

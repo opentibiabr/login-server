@@ -36,7 +36,7 @@ func createCharacterMessage(sex uint32) *login_proto_messages.Character {
 func createSessionMessage(isPremium bool) *login_proto_messages.Session {
 	return &login_proto_messages.Session{
 		IsPremium:    isPremium,
-		PremiumUntil: defaultNumber,
+		PremiumUntil: uint64(defaultNumber),
 		SessionKey:   defaultString,
 		LastLogin:    defaultNumber,
 	}

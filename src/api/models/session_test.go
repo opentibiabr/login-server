@@ -19,7 +19,7 @@ func TestLoadSessionFromMessage(t *testing.T) {
 		args{createSessionMessage(false)},
 		Session{
 			IsPremium:     false,
-			PremiumUntil:  defaultNumber,
+			PremiumUntil:  uint64(defaultNumber),
 			SessionKey:    defaultString,
 			LastLoginTime: defaultNumber,
 			Status:        "active",
@@ -28,7 +28,7 @@ func TestLoadSessionFromMessage(t *testing.T) {
 		args{createSessionMessage(true)},
 		Session{
 			IsPremium:     true,
-			PremiumUntil:  defaultNumber,
+			PremiumUntil:  uint64(defaultNumber),
 			SessionKey:    defaultString,
 			LastLoginTime: defaultNumber,
 			Status:        "active",

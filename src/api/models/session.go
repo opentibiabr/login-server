@@ -9,7 +9,7 @@ type Session struct {
 	IsReturner                    bool   `json:"isreturner"`
 	LastLoginTime                 uint32 `json:"lastlogintime" proto:"LastLogin"`
 	OptionTracking                bool   `json:"optiontracking"`
-	PremiumUntil                  uint32 `json:"premiumuntil"`
+	PremiumUntil                  uint64 `json:"premiumuntil"`
 	ReturnerNotification          bool   `json:"returnernotification"`
 	SessionKey                    string `json:"sessionkey"`
 	ShowRewardNews                bool   `json:"showrewardnews"`

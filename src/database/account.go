@@ -51,9 +51,9 @@ func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
 	}
 }
 
-func (acc *Account) GetPremiumTime() uint32 {
+func (acc *Account) GetPremiumTime() uint64 {
 	if acc.PremDays > 0 {
-		return uint32(time.Now().UnixNano()/million) + acc.PremDays*secondsInADay
+		return uint64(time.Now().UnixNano()/million) + uint64(acc.PremDays * secondsInADay)
 	}
 	return 0
 }

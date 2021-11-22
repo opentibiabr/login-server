@@ -26,7 +26,7 @@ message PlayData {
 
 message Session {
     bool is_premium = 1;
-    uint32 premium_until = 2;
+    uint64 premium_until = 2;
     string session_key = 3;
     uint32 last_login = 4;
 }

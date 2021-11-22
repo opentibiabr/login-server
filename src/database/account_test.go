@@ -75,7 +75,7 @@ func TestAccount_GetPremiumTime(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   uint32
+		want   uint64
 	}{{
 		name:   "Premium time 0 returns 0",
 		fields: fields{PremDays: 0},

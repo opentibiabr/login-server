@@ -24,11 +24,11 @@ type CharacterInfo struct {
 
 type Outfit struct {
 	OutfitID    uint32 `json:"outfitid" proto:"LookType"`
-	AddonsFlags uint32 `json:"addonsflags" proto:"LookHead"`
-	DetailColor uint32 `json:"detailcolor" proto:"LookBody"`
-	HeadColor   uint32 `json:"headcolor" proto:"LookLegs"`
-	LegsColor   uint32 `json:"legscolor" proto:"LookFeet"`
-	TorsoColor  uint32 `json:"torsocolor" proto:"Addons"`
+	AddonsFlags uint32 `json:"addonsflags" proto:"Addons"`
+	DetailColor uint32 `json:"detailcolor" proto:"LookFeet"`
+	HeadColor   uint32 `json:"headcolor" proto:"LookHead"`
+	LegsColor   uint32 `json:"legscolor" proto:"LookLegs"`
+	TorsoColor  uint32 `json:"torsocolor" proto:"LookBody"`
 }
 
 type TournamentInfo struct {

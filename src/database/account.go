@@ -20,7 +20,6 @@ type Account struct {
 }
 
 const secondsInADay = 24 * 60 * 60
-const million = 1e6
 
 func (acc *Account) Authenticate(db *sql.DB) error {
 	h := sha1.New()
@@ -53,7 +52,7 @@ func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
 
 func (acc *Account) GetPremiumTime() uint64 {
 	if acc.PremDays > 0 {
-		return uint64(time.Now().UnixNano()/million) + uint64(acc.PremDays * secondsInADay)
+		return uint64(time.Now().Unix()) + uint64(acc.PremDays * secondsInADay)
 	}
 	return 0
 }

@@ -1,52 +1,69 @@
 package main
 
 import (
-	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/opentibiabr/login-server/src/api"
 	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/grpc"
+	grpcsrv "github.com/opentibiabr/login-server/src/grpc"
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/opentibiabr/login-server/src/server"
-	"sync"
-	"time"
 )
 
-var numberOfServers = 2
-var initDelay = 200
+const (
+	quitChanBuffer = 1
+	sleepTime      = 200 * time.Millisecond
+)
 
 func main() {
 	logger.Init(configs.GetLogLevel())
 	logger.Info("Welcome to OTBR Login Server")
 	logger.Info("Loading configurations...")
 
-	var wg sync.WaitGroup
-	wg.Add(numberOfServers)
-
 	err := configs.Init()
 	if err != nil {
 		logger.Debug("Failed to load '.env' in dev environment, going with default.")
 	}
 
-	gConfigs := configs.GetGlobalConfigs()
+	cfg := configs.GetGlobalConfigs()
+	errC := make(chan error)
+	quit := make(chan os.Signal, quitChanBuffer)
 
-	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))
-	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
+	// listen to server errors
+	go func() {
+		if err := <-errC; err != nil {
+			quit <- os.Kill
+		}
+	}()
 
-	time.Sleep(time.Duration(initDelay) * time.Millisecond)
-	gConfigs.Display()
+	// start the grpc server
+	go func() {
+		if err := startServer(cfg, grpcsrv.Initialize(cfg)); err != nil {
+			logger.Error(err)
+			errC <- err
+		}
+	}()
 
-	// wait until WaitGroup is done
-	wg.Wait()
-	logger.Info("Good bye...")
+	// start the api server
+	go func() {
+		if err := startServer(cfg, api.Initialize(cfg)); err != nil {
+			logger.Error(err)
+			errC <- err
+		}
+	}()
+
+	time.Sleep(sleepTime)
+	cfg.Display()
+
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	<-quit
+	logger.Info("Login server has been shutdown, goodbye...")
 }
 
-func startServer(
-	wg *sync.WaitGroup,
-	gConfigs configs.GlobalConfigs,
-	server server.ServerInterface,
-) {
-	logger.Info(fmt.Sprintf("Starting %s server...", server.GetName()))
-	logger.Error(server.Run(gConfigs))
-	wg.Done()
-	logger.Warn(fmt.Sprintf("Server %s is gone...", server.GetName()))
+func startServer(cfg configs.GlobalConfigs, srv server.ServerInterface) error {
+	logger.Info("Starting " + srv.GetName() + " server...")
+	return srv.Run(cfg)
 }

@@ -2,6 +2,7 @@ package grpc_login_server
 
 import (
 	"context"
+
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"

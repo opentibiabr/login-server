@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/logger"
 )

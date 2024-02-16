@@ -1,9 +1,10 @@
 package models
 
 import (
-	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"reflect"
 	"testing"
+
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
 
 func TestLoadCharactersFromMessage(t *testing.T) {

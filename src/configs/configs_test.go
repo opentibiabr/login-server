@@ -2,11 +2,12 @@ package configs
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/time/rate"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/time/rate"
 )
 
 const defaultString = "default_string"

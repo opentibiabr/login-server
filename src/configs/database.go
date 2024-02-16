@@ -44,6 +44,6 @@ func GetDBConfigs() DBConfigs {
 		Port: GetEnvInt(EnvDBPortKey, 3306),
 		Name: GetEnvStr(EnvDBNameKey, "canary"),
 		User: GetEnvStr(EnvDBUserKey, "canary"),
-		Pass: GetEnvStr(EnvDBPassKey, "canary"),
+		Pass: GetEnvStr(EnvDBPassKey, ""),
 	}
 }

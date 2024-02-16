@@ -2,10 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"time"
+
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 var logger = log.New()

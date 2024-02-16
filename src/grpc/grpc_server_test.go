@@ -2,10 +2,11 @@ package grpc_login_server
 
 import (
 	"database/sql"
+	"testing"
+
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/server"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGrpcServer_GetName(t *testing.T) {

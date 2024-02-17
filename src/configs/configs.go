@@ -20,6 +20,8 @@ type GlobalConfigs struct {
 	LoginServerConfigs LoginServerConfigs
 }
 
+// LuaConfigManager is a structure that manages configurations loaded from a Lua file.
+// It stores the configurations as key-value pairs, where both keys and values are strings.
 type LuaConfigManager struct {
 	configs map[string]string
 }

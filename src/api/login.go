@@ -19,7 +19,7 @@ func (_api *Api) login(c *gin.Context) {
 
 	switch payload.Type {
 	case "eventschedule":
-		database.HandleEventSchedule(c, _api.ServerPath+"/data/XML/events.xml")
+		database.HandleEventSchedule(c, _api.CorePath+"XML/events.xml")
 	case "boostedcreature":
 		database.HandleBoostedCreature(c, _api.DB, &_api.BoostedCreatureID, &_api.BoostedBossID)
 	case "login":

@@ -24,6 +24,7 @@ type Api struct {
 	BoostedCreatureID uint32
 	BoostedBossID     uint32
 	ServerPath        string
+	CorePath          string
 }
 
 func Initialize(gConfigs configs.GlobalConfigs) *Api {
@@ -46,6 +47,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.Router.Use(gin.Recovery())
 	_api.Router.Use(ipLimiter.Limit())
 	_api.ServerPath = configs.GetEnvStr("SERVER_PATH", "")
+	_api.CorePath = _api.ServerPath + "/data/"
 
 	_api.initializeRoutes()
 
@@ -53,7 +55,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	_api.GrpcConnection, err = grpc.Dial(gConfigs.LoginServerConfigs.Grpc.Format(), grpc.WithInsecure())
 	if err != nil {
-		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
+		logger.Error(errors.New("couldn't start GRPC reverse proxy server, check if the login server is running and the GRPC port is open"))
 	}
 
 	return &_api

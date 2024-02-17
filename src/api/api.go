@@ -3,6 +3,9 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"net/http"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/limiter"
@@ -11,8 +14,6 @@ import (
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/opentibiabr/login-server/src/server"
 	"google.golang.org/grpc"
-	"net/http"
-	"sync"
 )
 
 type Api struct {
@@ -20,6 +21,9 @@ type Api struct {
 	DB             *sql.DB
 	GrpcConnection *grpc.ClientConn
 	server.ServerInterface
+	BoostedCreatureID uint32
+	BoostedBossID     uint32
+	ServerPath        string
 }
 
 func Initialize(gConfigs configs.GlobalConfigs) *Api {
@@ -41,6 +45,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())
 	_api.Router.Use(ipLimiter.Limit())
+	_api.ServerPath = configs.GetEnvStr("SERVER_PATH", "")
 
 	_api.initializeRoutes()
 

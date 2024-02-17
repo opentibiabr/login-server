@@ -1,3 +1,7 @@
+// Package database provides functionalities for interacting with the database of the system,
+// including operations to fetch and update data about boosted creatures and bosses. This package
+// encapsulates all SQL queries and data manipulations, making maintenance and future development
+// easier.
 package database
 
 import (
@@ -13,36 +17,36 @@ import (
 	"github.com/opentibiabr/login-server/src/logger"
 )
 
-type Events struct {
+type events struct {
 	XMLName xml.Name `xml:"events"`
-	Events  []Event  `xml:"event"`
+	Events  []event  `xml:"event"`
 }
 
-type Description struct {
+type description struct {
 	Text string `xml:"description,attr"`
 }
 
-type Event struct {
+type event struct {
 	Name        string      `xml:"name,attr"`
 	StartDate   string      `xml:"startdate,attr"`
 	EndDate     string      `xml:"enddate,attr"`
-	Colors      Colors      `xml:"colors"`
-	Description Description `xml:"description"`
-	Details     Details     `xml:"details"`
+	Colors      colors      `xml:"colors"`
+	Description description `xml:"description"`
+	Details     details     `xml:"details"`
 }
 
-type Colors struct {
+type colors struct {
 	Light string `xml:"colorlight,attr"`
 	Dark  string `xml:"colordark,attr"`
 }
 
-type Details struct {
+type details struct {
 	DisplayPriority string `xml:"displaypriority,attr"`
 	IsSeasonal      string `xml:"isseasonal,attr"`
 	SpecialEvent    string `xml:"specialevent,attr"`
 }
 
-func loadEventsSchedule(filePath string) (*Events, error) {
+func loadEventsSchedule(filePath string) (*events, error) {
 	xmlFile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(fmt.Errorf(err.Error()))
@@ -56,7 +60,7 @@ func loadEventsSchedule(filePath string) (*Events, error) {
 		return nil, err
 	}
 
-	var events Events
+	var events events
 	err = xml.Unmarshal(byteValue, &events)
 	if err != nil {
 		logger.Error(fmt.Errorf(err.Error()))
@@ -81,7 +85,7 @@ func parseDateString(dateStr string) int {
 	return 0
 }
 
-func processEvents(events *Events) []map[string]interface{} {
+func processEvents(events *events) []map[string]interface{} {
 	eventList := make([]map[string]interface{}, 0)
 
 	for _, event := range events.Events {
@@ -111,6 +115,11 @@ func processEvents(events *Events) []map[string]interface{} {
 	return eventList
 }
 
+// HandleEventSchedule loads and processes an event schedule from a specified XML file.
+// It takes a Gin context and a string path to the event XML file as arguments.
+// If the event schedule is loaded and processed successfully, it sends back a JSON response
+// with the list of events and the last update timestamp.
+// If there is an error loading or processing the event schedule, it responds with an internal server error.
 func HandleEventSchedule(c *gin.Context, eventPath string) {
 	events, err := loadEventsSchedule(eventPath)
 	if err != nil {

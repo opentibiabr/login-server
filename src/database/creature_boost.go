@@ -1,3 +1,7 @@
+// Package database provides functionalities for interacting with the database of the system,
+// including operations to fetch and update data about boosted creatures and bosses. This package
+// encapsulates all SQL queries and data manipulations, making maintenance and future development
+// easier.
 package database
 
 import (
@@ -44,6 +48,12 @@ func checkAndUpdateBoostedCreatureData(db *sql.DB, creatureRaceID *uint32, bossR
 	return nil
 }
 
+// HandleBoostedCreature checks for updated boosted creature and boss race IDs in the database,
+// updates the provided race IDs if they are different, and responds with the current boosted creature
+// and boss race IDs. It takes a Gin context, a database connection, and pointers to the creature and boss
+// race IDs as arguments. If there is an error in checking or updating the boosted creature data,
+// it responds with an internal server error. Otherwise, it responds with a JSON containing the
+// boosted creature status and the current race IDs for the creature and boss.
 func HandleBoostedCreature(c *gin.Context, db *sql.DB, creatureRaceID *uint32, bossRaceID *uint32) {
 	if err := checkAndUpdateBoostedCreatureData(db, creatureRaceID, bossRaceID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

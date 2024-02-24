@@ -1,11 +1,12 @@
 package api
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 var defaultString = "default"

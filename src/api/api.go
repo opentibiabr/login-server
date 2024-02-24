@@ -3,6 +3,9 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"net/http"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/limiter"
@@ -11,8 +14,6 @@ import (
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/opentibiabr/login-server/src/server"
 	"google.golang.org/grpc"
-	"net/http"
-	"sync"
 )
 
 type Api struct {

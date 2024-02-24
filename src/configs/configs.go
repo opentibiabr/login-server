@@ -1,10 +1,11 @@
 package configs
 
 import (
-	"github.com/joho/godotenv"
-	"github.com/opentibiabr/login-server/src/logger"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
+	"github.com/opentibiabr/login-server/src/logger"
 )
 
 type Config interface {

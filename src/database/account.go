@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/logger"
-	"time"
 )
 
 type Account struct {
@@ -35,6 +37,7 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 
 	err := db.QueryRow(statement).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
 	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
@@ -52,7 +55,7 @@ func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
 
 func (acc *Account) GetPremiumTime() uint64 {
 	if acc.PremDays > 0 {
-		return uint64(time.Now().Unix()) + uint64(acc.PremDays * secondsInADay)
+		return uint64(time.Now().Unix()) + uint64(acc.PremDays*secondsInADay)
 	}
 	return 0
 }

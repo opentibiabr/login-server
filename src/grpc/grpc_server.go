@@ -2,12 +2,13 @@ package grpc_login_server
 
 import (
 	"database/sql"
+	"net"
+
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/server"
 	"google.golang.org/grpc"
-	"net"
 )
 
 type GrpcServer struct {

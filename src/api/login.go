@@ -2,11 +2,12 @@ package api
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
-	"net/http"
 )
 
 func (_api *Api) login(c *gin.Context) {

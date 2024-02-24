@@ -1,11 +1,12 @@
 package configs
 
 import (
+	"os"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
-	"os"
-	"testing"
 )
 
 func TestGetHttpLoginConfigs(t *testing.T) {

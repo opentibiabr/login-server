@@ -2,11 +2,12 @@ package models
 
 import (
 	"fmt"
-	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"log"
 	"reflect"
 	"testing"
+
+	"github.com/opentibiabr/login-server/src/configs"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
 
 func TestPlayground(t *testing.T) {

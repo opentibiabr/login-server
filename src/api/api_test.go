@@ -2,11 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/server"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"testing"
 )
 
 func TestApi_GetName(t *testing.T) {

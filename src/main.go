@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/opentibiabr/login-server/src/api"
-	"github.com/opentibiabr/login-server/src/configs"
-	"github.com/opentibiabr/login-server/src/grpc"
-	"github.com/opentibiabr/login-server/src/logger"
-	"github.com/opentibiabr/login-server/src/server"
 	"sync"
 	"time"
+
+	"github.com/opentibiabr/login-server/src/api"
+	"github.com/opentibiabr/login-server/src/configs"
+	grpc_login_server "github.com/opentibiabr/login-server/src/grpc"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/server"
 )
 
 var numberOfServers = 2

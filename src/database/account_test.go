@@ -1,11 +1,12 @@
 package database
 
 import (
+	"testing"
+	"time"
+
 	"bou.ke/monkey"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestAccount_GetGrpcSession(t *testing.T) {

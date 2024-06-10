@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 )
@@ -23,6 +24,7 @@ func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, e
 
 	defer rows.Close()
 
+	vocations := configs.GetServerVocations()
 	for rows.Next() {
 		player := login_proto_messages.Character{
 			WorldId: 0,
@@ -47,7 +49,9 @@ func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, e
 			acc.LastLogin = player.Info.LastLogin
 		}
 
-		player.Info.Vocation = configs.GetServerVocations()[vocation]
+		if vocation < len(vocations) {
+			player.Info.Vocation = vocations[vocation]
+		}
 
 		players = append(players, &player)
 	}

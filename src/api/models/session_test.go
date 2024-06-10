@@ -1,9 +1,10 @@
 package models
 
 import (
+	"testing"
+
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestLoadSessionFromMessage(t *testing.T) {

@@ -72,16 +72,16 @@ func loadEventsSchedule(filePath string) (*events, error) {
 }
 
 func parseDateString(dateStr string) int {
-	layouts := []string{"02/01/2006", "2/01/2006", "02/1/2006", "2/1/2006"}
+	layouts := []string{"01/02/2006"}  // Formato MM/DD/YYYY
 	var t time.Time
 	var err error
 	for _, layout := range layouts {
-		t, err = time.ParseInLocation(layout, dateStr, time.Local)
+		t, err = time.Parse(layout, dateStr)
 		if err == nil {
 			return int(t.Unix())
 		}
 	}
-	logger.Error(fmt.Errorf(err.Error()))
+	logger.Error(fmt.Errorf("Erro ao fazer parsing da data: %v", err))
 	return 0
 }
 

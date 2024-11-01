@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/api/limiter"
@@ -45,6 +46,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	gin.SetMode(gin.ReleaseMode)
 
 	_api.Router = gin.New()
+	_api.Router.Use(cors.Default())
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())
 	_api.Router.Use(ipLimiter.Limit())

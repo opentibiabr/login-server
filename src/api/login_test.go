@@ -138,7 +138,7 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 				ExternalPortProtected:      defaultNumber,
 				ExternalPortUnprotected:    defaultNumber,
 				Location:                   defaultString,
-				AntiCheatProtection:        false,
+				AntiCheatProtection:        true,
 				PreviewState:               0,
 				PvpType:                    0,
 			}},

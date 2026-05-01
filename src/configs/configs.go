@@ -110,6 +110,10 @@ func NewLuaConfigManager(filePath string) (*LuaConfigManager, error) {
 // GetString retrieves the string value for a given key from the configuration.
 // If the key does not exist or the value is not a string, it returns an empty string.
 func (manager *LuaConfigManager) GetString(key string) string {
+	if manager == nil {
+		return ""
+	}
+
 	value, exists := manager.configs[key]
 	if !exists {
 		return ""
@@ -124,6 +128,10 @@ func (manager *LuaConfigManager) GetString(key string) string {
 // GetInt retrieves the integer value for a given key from the configuration.
 // It returns 0 if the key does not exist, the value is not an integer, or an error occurs during conversion.
 func (manager *LuaConfigManager) GetInt(key string) int {
+	if manager == nil {
+		return 0
+	}
+
 	valueStr := manager.GetString(key)
 	if valueStr == "" {
 		return 0
@@ -138,6 +146,10 @@ func (manager *LuaConfigManager) GetInt(key string) int {
 // GetBool retrieves the boolean value for a given key from the configuration.
 // It returns false if the key does not exist, the value is not a boolean, or an error occurs during conversion.
 func (manager *LuaConfigManager) GetBool(key string) bool {
+	if manager == nil {
+		return false
+	}
+
 	valueStr := manager.GetString(key)
 	if valueStr == "" {
 		return false

@@ -8,7 +8,6 @@ type CharacterPayload struct {
 	WorldID uint32 `json:"worldid"`
 	CharacterInfo
 	Outfit
-	TournamentInfo
 }
 
 type CharacterInfo struct {
@@ -29,11 +28,6 @@ type Outfit struct {
 	HeadColor   uint32 `json:"headcolor" proto:"LookHead"`
 	LegsColor   uint32 `json:"legscolor" proto:"LookLegs"`
 	TorsoColor  uint32 `json:"torsocolor" proto:"LookBody"`
-}
-
-type TournamentInfo struct {
-	IsTournamentParticipant          bool   `json:"istournamentparticipant"`
-	RemainingDailyTournamentPlayTime uint32 `json:"remainingdailytournamentplaytime"`
 }
 
 func LoadCharactersFromMessage(charactersMsg []*login_proto_messages.Character) []CharacterPayload {

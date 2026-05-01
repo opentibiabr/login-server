@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/gin-contrib/cors"
@@ -50,13 +53,26 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())
 	_api.Router.Use(ipLimiter.Limit())
-	_api.ServerPath = configs.GetEnvStr("SERVER_PATH", "") + "/"
-	configPath := _api.ServerPath + "config.lua"
-	_api.LuaConfigManager, err = configs.NewLuaConfigManager(configPath)
-	if err != nil {
-		logger.Error(fmt.Errorf("error to load Lua configurations: %v", err))
+	_api.ServerPath = strings.TrimSpace(configs.GetEnvStr("SERVER_PATH", ""))
+	if _api.ServerPath != "" {
+		configPath := filepath.Join(_api.ServerPath, "config.lua")
+		if _, statErr := os.Stat(configPath); statErr != nil {
+			distPath := filepath.Join(_api.ServerPath, "config.lua.dist")
+			if _, distErr := os.Stat(distPath); distErr == nil {
+				configPath = distPath
+			}
+		}
+
+		_api.LuaConfigManager, err = configs.NewLuaConfigManager(configPath)
+		if err != nil {
+			logger.Error(fmt.Errorf("error to load Lua configurations: %v", err))
+		}
 	}
-	_api.CorePath = _api.ServerPath + _api.LuaConfigManager.GetString("coreDirectory") + "/"
+
+	coreDirectory := strings.TrimSpace(_api.LuaConfigManager.GetString("coreDirectory"))
+	if _api.ServerPath != "" && coreDirectory != "" {
+		_api.CorePath = filepath.ToSlash(filepath.Join(_api.ServerPath, coreDirectory))
+	}
 
 	_api.initializeRoutes()
 
@@ -89,6 +105,7 @@ func (_api *Api) GetName() string {
 }
 
 func (_api *Api) initializeRoutes() {
+	_api.Router.POST("/", _api.login)
 	_api.Router.POST("/login", _api.login)
 	_api.Router.POST("/login.php", _api.login)
 }

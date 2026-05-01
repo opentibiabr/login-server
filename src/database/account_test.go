@@ -31,7 +31,7 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 		want: &login_proto_messages.Session{
 			IsPremium:    false,
 			PremiumUntil: 0,
-			SessionKey:   "a@a.com\n123456",
+			SessionKey:   "opaque-session",
 		},
 	}, {
 		name: "Get session positive prem days",
@@ -43,7 +43,7 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 		want: &login_proto_messages.Session{
 			IsPremium:    true,
 			PremiumUntil: 86400,
-			SessionKey:   "a@a.com\n123456",
+			SessionKey:   "opaque-session",
 		},
 	}}
 	for _, tt := range tests {
@@ -60,7 +60,7 @@ func TestAccount_GetGrpcSession(t *testing.T) {
 					return time.Unix(0, 0)
 				})
 			}
-			assert.Equal(t, tt.want, acc.GetGrpcSession())
+			assert.Equal(t, tt.want, acc.GetGrpcSession("opaque-session"))
 		})
 	}
 }

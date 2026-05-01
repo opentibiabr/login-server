@@ -1,8 +1,10 @@
 package database
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -22,6 +24,7 @@ type Account struct {
 }
 
 const secondsInADay = 24 * 60 * 60
+const sessionDuration = 24 * time.Hour
 
 func (acc *Account) Authenticate(db *sql.DB) error {
 	h := sha1.New()
@@ -44,13 +47,35 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 	return nil
 }
 
-func (acc *Account) GetGrpcSession() *login_proto_messages.Session {
+func (acc *Account) GetGrpcSession(sessionKey string) *login_proto_messages.Session {
 	return &login_proto_messages.Session{
 		IsPremium:    acc.PremDays > 0,
 		PremiumUntil: acc.GetPremiumTime(),
-		SessionKey:   fmt.Sprintf("%s\n%s", acc.Email, acc.Password),
+		SessionKey:   sessionKey,
 		LastLogin:    acc.LastLogin,
 	}
+}
+
+func (acc *Account) CreateSession(db *sql.DB) (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+
+	sessionKey := hex.EncodeToString(raw)
+	hash := sha1.Sum([]byte(sessionKey))
+	expires := time.Now().Add(sessionDuration).Unix()
+
+	if _, err := db.Exec(
+		"INSERT INTO `account_sessions` (`id`, `account_id`, `expires`) VALUES (?, ?, ?)",
+		fmt.Sprintf("%x", hash),
+		acc.ID,
+		expires,
+	); err != nil {
+		return "", err
+	}
+
+	return sessionKey, nil
 }
 
 func (acc *Account) GetPremiumTime() uint64 {

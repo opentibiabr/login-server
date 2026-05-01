@@ -30,12 +30,18 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return nil, err
 	}
 
+	sessionKey, err := acc.CreateSession(ls.DB)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
 	res := login_proto_messages.LoginResponse{
 		PlayData: &login_proto_messages.PlayData{
 			Characters: characters,
 			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
 		},
-		Session: acc.GetGrpcSession(),
+		Session: acc.GetGrpcSession(sessionKey),
 	}
 
 	logger.WithFields(logrus.Fields{

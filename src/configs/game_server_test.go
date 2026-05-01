@@ -52,7 +52,7 @@ func TestGetGameServerConfigs(t *testing.T) {
 		name: "Default Game Server Configs",
 		want: GameServerConfigs{
 			IP:       "127.0.0.1",
-			Name:     "Canary",
+			Name:     DefaultServerName,
 			Port:     7172,
 			Location: "BRA",
 		},

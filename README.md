@@ -51,7 +51,7 @@ You can also download our docker image and apply the environment variables to yo
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
 |`SERVER_IP`          | `game server IP address`             |
 |`SERVER_LOCATION`    | `game server location`               |
-|`SERVER_NAME`        | `game server name`                   |
+|`SERVER_NAME`        | `game server name; the official client sends this exact value plus newline before the first world-login packet` |
 |`SERVER_PORT`        | `game server game port`              |
 |`VOCATIONS`          | `game vocation list csv (a,b,c)`     |
 

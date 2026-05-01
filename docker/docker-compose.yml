@@ -17,7 +17,7 @@ services:
       - MYSQL_DBNAME=canary
       - MYSQL_USER=canary
       - MYSQL_PASS=canary
-      - SERVER_NAME=Canary
+      - SERVER_NAME=OTServBR-Global
       - SERVER_IP=127.0.0.1
       - SERVER_PORT=7172
       - SERVER_LOCATION=NL

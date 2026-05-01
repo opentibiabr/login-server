@@ -9,6 +9,7 @@ const EnvServerIpKey = "SERVER_IP"
 const EnvServerLocationKey = "SERVER_LOCATION"
 const EnvServerNameKey = "SERVER_NAME"
 const EnvServerPortKey = "SERVER_PORT"
+const DefaultServerName = "OTServBR-Global"
 
 type GameServerConfigs struct {
 	Port     int
@@ -30,7 +31,7 @@ func (gameServerConfigs *GameServerConfigs) Format() string {
 func GetGameServerConfigs() GameServerConfigs {
 	return GameServerConfigs{
 		IP:       GetEnvStr(EnvServerIpKey, "127.0.0.1"),
-		Name:     GetEnvStr(EnvServerNameKey, "Canary"),
+		Name:     GetEnvStr(EnvServerNameKey, DefaultServerName),
 		Port:     GetEnvInt(EnvServerPortKey, 7172),
 		Location: GetEnvStr(EnvServerLocationKey, "BRA"),
 	}

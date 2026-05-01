@@ -100,6 +100,7 @@ func TestLoadWorldsFromMessage(t *testing.T) {
 			ExternalAddressUnprotected: defaultString,
 			Location:                   defaultString,
 			Name:                       defaultString,
+			AntiCheatProtection:        true,
 		}}}, {
 		"one_world_id_5",
 		args{[]*login_proto_messages.World{createWorldMessage(5)}},
@@ -111,6 +112,7 @@ func TestLoadWorldsFromMessage(t *testing.T) {
 			ExternalAddressUnprotected: defaultString,
 			Location:                   defaultString,
 			Name:                       defaultString,
+			AntiCheatProtection:        true,
 		}}},
 		{
 			"two_worlds_different_ids",
@@ -123,6 +125,7 @@ func TestLoadWorldsFromMessage(t *testing.T) {
 				ExternalAddressUnprotected: defaultString,
 				Location:                   defaultString,
 				Name:                       defaultString,
+				AntiCheatProtection:        true,
 			}, {
 				ID:                         5,
 				ExternalPortProtected:      defaultNumber,
@@ -131,6 +134,7 @@ func TestLoadWorldsFromMessage(t *testing.T) {
 				ExternalAddressUnprotected: defaultString,
 				Location:                   defaultString,
 				Name:                       defaultString,
+				AntiCheatProtection:        true,
 			}},
 		},
 	}

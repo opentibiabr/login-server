@@ -18,11 +18,15 @@ type World struct {
 	PvpType                    uint32 `json:"pvptype"`
 }
 
+const defaultAntiCheatProtection = true
+
 func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 	var worlds []World
 
 	for _, worldMsg := range worldsMsg {
-		worlds = append(worlds, *FromProtoConvertor(worldMsg, &World{}).(*World))
+		world := *FromProtoConvertor(worldMsg, &World{}).(*World)
+		world.AntiCheatProtection = defaultAntiCheatProtection
+		worlds = append(worlds, world)
 	}
 
 	return worlds

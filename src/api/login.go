@@ -24,7 +24,7 @@ func (_api *Api) login(c *gin.Context) {
 	case "cacheinfo", "news", "newsviewed":
 		c.JSON(http.StatusOK, buildTemporaryErrorPayload())
 	case "eventschedule":
-		database.HandleEventSchedule(c, _api.CorePath+"XML/events.xml")
+		database.HandleEventSchedule(c, _api.eventSchedulePath())
 	case "boostedcreature":
 		database.HandleBoostedCreature(c, _api.DB, &_api.BoostedCreatureID, &_api.BoostedBossID)
 	case "login":

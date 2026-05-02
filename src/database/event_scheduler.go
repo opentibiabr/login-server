@@ -5,12 +5,15 @@
 package database
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +49,30 @@ type details struct {
 	SpecialEvent    string `xml:"specialevent,attr"`
 }
 
+type jsonEvents struct {
+	Events []jsonEvent `json:"events"`
+}
+
+type jsonEvent struct {
+	Name        string      `json:"name"`
+	StartDate   string      `json:"startdate"`
+	EndDate     string      `json:"enddate"`
+	Colors      jsonColors  `json:"colors"`
+	Description string      `json:"description"`
+	Details     jsonDetails `json:"details"`
+}
+
+type jsonColors struct {
+	Light string `json:"colorlight"`
+	Dark  string `json:"colordark"`
+}
+
+type jsonDetails struct {
+	DisplayPriority int `json:"displaypriority"`
+	IsSeasonal      int `json:"isseasonal"`
+	SpecialEvent    int `json:"specialevent"`
+}
+
 func loadEventsSchedule(filePath string) (*events, error) {
 	xmlFile, err := os.Open(filePath)
 	if err != nil {
@@ -61,7 +88,11 @@ func loadEventsSchedule(filePath string) (*events, error) {
 	}
 
 	var events events
-	err = xml.Unmarshal(byteValue, &events)
+	if strings.EqualFold(filepath.Ext(filePath), ".json") {
+		err = unmarshalJsonEvents(byteValue, &events)
+	} else {
+		err = xml.Unmarshal(byteValue, &events)
+	}
 	if err != nil {
 		logger.Error(fmt.Errorf(err.Error()))
 		return nil, err
@@ -69,6 +100,43 @@ func loadEventsSchedule(filePath string) (*events, error) {
 
 	logger.Debug(fmt.Sprintf("Unmarshal from XML done successfully, %d events loaded.", len(events.Events)))
 	return &events, nil
+}
+
+func unmarshalJsonEvents(data []byte, out *events) error {
+	var jsonSchedule jsonEvents
+	if err := json.Unmarshal(data, &jsonSchedule); err != nil {
+		return err
+	}
+
+	out.Events = make([]event, 0, len(jsonSchedule.Events))
+	for _, jsonEvent := range jsonSchedule.Events {
+		out.Events = append(out.Events, event{
+			Name:      jsonEvent.Name,
+			StartDate: normalizeJsonDate(jsonEvent.StartDate),
+			EndDate:   normalizeJsonDate(jsonEvent.EndDate),
+			Colors: colors{
+				Light: jsonEvent.Colors.Light,
+				Dark:  jsonEvent.Colors.Dark,
+			},
+			Description: description{Text: jsonEvent.Description},
+			Details: details{
+				DisplayPriority: strconv.Itoa(jsonEvent.Details.DisplayPriority),
+				IsSeasonal:      strconv.FormatBool(jsonEvent.Details.IsSeasonal != 0),
+				SpecialEvent:    strconv.FormatBool(jsonEvent.Details.SpecialEvent != 0),
+			},
+		})
+	}
+
+	return nil
+}
+
+func normalizeJsonDate(dateStr string) string {
+	parts := strings.Split(dateStr, "/")
+	if len(parts) != 3 {
+		return dateStr
+	}
+
+	return strings.Join([]string{parts[1], parts[0], parts[2]}, "/")
 }
 
 func parseDateString(dateStr string) int {

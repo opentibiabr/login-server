@@ -7,7 +7,7 @@ import (
 
 func (_api *Api) eventSchedulePath() string {
 	candidates := []string{
-		filepath.Join(_api.CorePath, "events", "events.xml"),
+		filepath.Join(_api.CorePath, "json", "eventscheduler", "events.json"),
 		filepath.Join(_api.CorePath, "XML", "events.xml"),
 	}
 

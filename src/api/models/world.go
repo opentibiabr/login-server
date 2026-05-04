@@ -18,7 +18,7 @@ type World struct {
 	PvpType                    uint32 `json:"pvptype"`
 }
 
-const defaultAntiCheatProtection = true
+const defaultAntiCheatProtection = false
 
 func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 	var worlds []World

@@ -108,4 +108,5 @@ func (_api *Api) initializeRoutes() {
 	_api.Router.POST("/", _api.login)
 	_api.Router.POST("/login", _api.login)
 	_api.Router.POST("/login.php", _api.login)
+	_api.Router.POST("/crash-report", _api.crashReport)
 }

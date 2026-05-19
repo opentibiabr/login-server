@@ -21,6 +21,7 @@ func TestParseDateString(t *testing.T) {
 
 func TestToInt(t *testing.T) {
 	assert.Equal(t, 10, toInt(float64(10)))
+	assert.Equal(t, 0, toInt(float64(10.5)))
 	assert.Equal(t, 42, toInt("42"))
 	assert.Equal(t, 0, toInt("abc"))
 }

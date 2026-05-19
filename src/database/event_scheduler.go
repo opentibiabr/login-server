@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -88,6 +89,10 @@ func parseDateString(dateStr string) int {
 func toInt(value interface{}) int {
 	switch typed := value.(type) {
 	case float64:
+		if math.Trunc(typed) != typed {
+			logger.Error(fmt.Errorf("failed to convert %v to int: value is not a whole number", typed))
+			return 0
+		}
 		return int(typed)
 	case string:
 		parsed, err := strconv.Atoi(typed)

@@ -22,6 +22,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Golang Lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.64.8
+          version: latest

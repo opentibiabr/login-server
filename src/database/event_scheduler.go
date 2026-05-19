@@ -41,18 +41,6 @@ type jsonDetails struct {
 	SpecialEvent    interface{} `json:"specialevent"`
 }
 
-type scheduleEvent struct {
-	Name            string
-	StartDate       string
-	EndDate         string
-	ColorLight      string
-	ColorDark       string
-	Description     string
-	DisplayPriority int
-	IsSeasonal      bool
-	SpecialEvent    bool
-}
-
 func loadEventsSchedule(filePath string) (*jsonEvents, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
@@ -79,8 +67,6 @@ func loadEventsSchedule(filePath string) (*jsonEvents, error) {
 
 func parseDateString(dateStr string) int {
 	layouts := []string{
-		"01/02/2006",
-		"1/2/2006",
 		"2006-01-02",
 		"02/01/2006",
 		"2/1/2006",
@@ -95,7 +81,7 @@ func parseDateString(dateStr string) int {
 		}
 	}
 
-	logger.Error(fmt.Errorf(err.Error()))
+	logger.Error(fmt.Errorf("failed to parse date %q: %w", dateStr, err))
 	return 0
 }
 
@@ -104,7 +90,11 @@ func toInt(value interface{}) int {
 	case float64:
 		return int(typed)
 	case string:
-		parsed, _ := strconv.Atoi(typed)
+		parsed, err := strconv.Atoi(typed)
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to convert %q to int: %w", typed, err))
+			return 0
+		}
 		return parsed
 	default:
 		return 0
@@ -124,7 +114,11 @@ func toBool(value interface{}) bool {
 		}
 
 		number, err := strconv.Atoi(typed)
-		return err == nil && number != 0
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to convert %q to bool: %w", typed, err))
+			return false
+		}
+		return number != 0
 	default:
 		return false
 	}
@@ -151,7 +145,7 @@ func processEvents(events *jsonEvents) []map[string]interface{} {
 	return eventList
 }
 
-// HandleEventSchedule loads and processes an event schedule from json/eventscheduler/events.json.
+// HandleEventSchedule loads and processes an event schedule from the provided path.
 func HandleEventSchedule(c *gin.Context, eventPath string) {
 	events, err := loadEventsSchedule(eventPath)
 	if err != nil {

@@ -45,20 +45,20 @@ type jsonDetails struct {
 func loadEventsSchedule(filePath string) (*jsonEvents, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
+		logger.Error(err)
 		return nil, err
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
+		logger.Error(err)
 		return nil, err
 	}
 
 	var events jsonEvents
 	if err = json.Unmarshal(byteValue, &events); err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
+		logger.Error(err)
 		return nil, err
 	}
 

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -33,12 +33,12 @@ jobs:
         uses: gittools/actions/gitversion/execute@v0.9.9
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v4
         with:
           install: true
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Build
         if: ${{ github.event_name == 'pull_request' }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v7
         with:
           file: docker/Dockerfile
           tags: ghcr.io/${{ github.repository }}:${{ steps.gitversion.outputs.semVer }}
@@ -64,7 +64,7 @@ jobs:
       - name: Build and push
         id: docker_build
         if: ${{ github.event_name == 'push' }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v7
         with:
           file: docker/Dockerfile
           push: true

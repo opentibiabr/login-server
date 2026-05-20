@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -28,6 +29,7 @@ type Account struct {
 
 const secondsInADay = 24 * 60 * 60
 const sessionDuration = 24 * time.Hour
+const sessionPersistenceTimeout = 3 * time.Second
 
 var ErrAccountSessionStorageUnavailable = errors.New("account session persistence unavailable")
 
@@ -61,7 +63,7 @@ func (acc *Account) GetGrpcSession(sessionKey string) *login_proto_messages.Sess
 	}
 }
 
-func (acc *Account) CreateSession(db *sql.DB) (string, error) {
+func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, error) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
 		return "", err
@@ -71,7 +73,15 @@ func (acc *Account) CreateSession(db *sql.DB) (string, error) {
 	hash := sha256.Sum256([]byte(sessionKey))
 	expires := time.Now().Add(sessionDuration).Unix()
 
-	if _, err := db.Exec(
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	writeCtx, cancel := context.WithTimeout(ctx, sessionPersistenceTimeout)
+	defer cancel()
+
+	if _, err := db.ExecContext(
+		writeCtx,
 		"INSERT INTO `account_sessions` (`id`, `account_id`, `expires`) VALUES (?, ?, ?)",
 		fmt.Sprintf("%x", hash),
 		acc.ID,

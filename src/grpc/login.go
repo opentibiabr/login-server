@@ -32,7 +32,7 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return nil, err
 	}
 
-	sessionKey, err := acc.CreateSession(ls.DB)
+	sessionKey, err := acc.CreateSession(ctx, ls.DB)
 	if err != nil {
 		logger.Error(err)
 		if errors.Is(err, database.ErrAccountSessionStorageUnavailable) {

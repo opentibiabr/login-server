@@ -1,0 +1,174 @@
+---
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "docker/**"
+      - "go.mod"
+      - "go.sum"
+      - "GitVersion.yml"
+      - "sonar-project.properties"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "docker/**"
+      - "go.mod"
+      - "go.sum"
+      - "GitVersion.yml"
+      - "sonar-project.properties"
+      - ".github/workflows/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Build Scope
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      analysis: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.analysis }}
+      compile: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.compile }}
+      docker: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: filter
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            analysis:
+              - "src/**"
+              - "tests/**"
+              - "docker/**"
+              - "go.mod"
+              - "go.sum"
+              - "sonar-project.properties"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/analysis-codeql.yml"
+              - ".github/workflows/analysis-codacy.yml"
+              - ".github/workflows/analysis-golang-lint.yml"
+              - ".github/workflows/analysis-sonarcloud.yml"
+            compile:
+              - "src/**"
+              - "tests/**"
+              - "go.mod"
+              - "go.sum"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/build-ubuntu.yml"
+              - ".github/workflows/build-macos.yml"
+              - ".github/workflows/build-windows.yml"
+              - ".github/workflows/tests-golang.yml"
+              - ".github/workflows/analysis-golang-lint.yml"
+            docker:
+              - "docker/**"
+              - "src/**"
+              - "go.mod"
+              - "go.sum"
+              - "GitVersion.yml"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/build-docker.yml"
+
+  tests-golang:
+    name: Tests - Golang
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests-golang.yml
+    secrets: inherit
+
+  analysis-golang-lint:
+    name: Analysis - Golang Lint
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+    uses: ./.github/workflows/analysis-golang-lint.yml
+    secrets: inherit
+
+  analysis-codeql:
+    name: Analysis - CodeQL
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.analysis == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/analysis-codeql.yml
+    secrets: inherit
+
+  analysis-codacy:
+    name: Analysis - Codacy Security Scan
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.analysis == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/analysis-codacy.yml
+    secrets: inherit
+
+  analysis-sonarcloud:
+    name: Analysis - SonarCloud
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.analysis == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/analysis-sonarcloud.yml
+    secrets: inherit
+
+  build-ubuntu:
+    name: Build - Ubuntu
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.compile == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-ubuntu.yml
+    secrets: inherit
+
+  build-macos:
+    name: Build - MacOS
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.compile == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-macos.yml
+    secrets: inherit
+
+  build-windows:
+    name: Build - Windows
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.compile == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-windows.yml
+    secrets: inherit
+
+  build-docker:
+    name: Build - Docker
+    needs: [changes, tests-golang, analysis-golang-lint]
+    if: needs.changes.outputs.docker == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit

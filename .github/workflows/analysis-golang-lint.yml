@@ -2,26 +2,25 @@
 name: Analysis - Golang Lint
 
 on:
-  pull_request:
-  push:
-    branches:
-      - master
-      - main
-      - develop
+  workflow_call:
 
 jobs:
   job:
     name: Golang Lint
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        go-version: [1.16.x]
+      fail-fast: false
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
 
       - name: Golang Lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest

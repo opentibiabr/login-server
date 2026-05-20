@@ -2,28 +2,21 @@
 name: Build - MacOS
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-      - master
+  workflow_call:
 
 jobs:
   job:
-    name: ${{ matrix.os }}-${{ matrix.go-version }}
-    runs-on: ${{ matrix.os }}
+    name: macos-15
+    runs-on: macos-15
     strategy:
       fail-fast: false
-      matrix:
-        os: [macos-15]
-        go-version: [1.16.x]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: stable
 

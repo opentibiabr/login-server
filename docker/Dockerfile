@@ -1,5 +1,5 @@
 # Stage 1: Download all dependencies
-FROM golang:1.16.4-alpine as builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /usr/local/go/src/github.com/opentibiabr/login-server
 COPY go.mod .

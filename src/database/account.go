@@ -3,13 +3,16 @@ package database
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
+	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/logger"
 )
@@ -25,6 +28,8 @@ type Account struct {
 
 const secondsInADay = 24 * 60 * 60
 const sessionDuration = 24 * time.Hour
+
+var ErrAccountSessionStorageUnavailable = errors.New("account session persistence unavailable")
 
 func (acc *Account) Authenticate(db *sql.DB) error {
 	h := sha1.New()
@@ -63,7 +68,7 @@ func (acc *Account) CreateSession(db *sql.DB) (string, error) {
 	}
 
 	sessionKey := hex.EncodeToString(raw)
-	hash := sha1.Sum([]byte(sessionKey))
+	hash := sha256.Sum256([]byte(sessionKey))
 	expires := time.Now().Add(sessionDuration).Unix()
 
 	if _, err := db.Exec(
@@ -72,6 +77,10 @@ func (acc *Account) CreateSession(db *sql.DB) (string, error) {
 		acc.ID,
 		expires,
 	); err != nil {
+		if isMissingAccountSessionsTable(err) {
+			logger.Error(err)
+			return "", ErrAccountSessionStorageUnavailable
+		}
 		return "", err
 	}
 
@@ -93,4 +102,14 @@ func LoadAccount(email string, password string, DB *sql.DB) (*Account, error) {
 	}
 
 	return &acc, nil
+}
+
+func isMissingAccountSessionsTable(err error) bool {
+	var mysqlErr *mysqlDriver.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1146
+	}
+
+	lowered := strings.ToLower(err.Error())
+	return strings.Contains(lowered, "account_sessions") && strings.Contains(lowered, "doesn't exist")
 }

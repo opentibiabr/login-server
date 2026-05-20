@@ -6,48 +6,17 @@ package database
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/logger"
 )
-
-type events struct {
-	XMLName xml.Name `xml:"events"`
-	Events  []event  `xml:"event"`
-}
-
-type description struct {
-	Text string `xml:"description,attr"`
-}
-
-type event struct {
-	Name        string      `xml:"name,attr"`
-	StartDate   string      `xml:"startdate,attr"`
-	EndDate     string      `xml:"enddate,attr"`
-	Colors      colors      `xml:"colors"`
-	Description description `xml:"description"`
-	Details     details     `xml:"details"`
-}
-
-type colors struct {
-	Light string `xml:"colorlight,attr"`
-	Dark  string `xml:"colordark,attr"`
-}
-
-type details struct {
-	DisplayPriority string `xml:"displaypriority,attr"`
-	IsSeasonal      string `xml:"isseasonal,attr"`
-	SpecialEvent    string `xml:"specialevent,attr"`
-}
 
 type jsonEvents struct {
 	Events []jsonEvent `json:"events"`
@@ -68,79 +37,44 @@ type jsonColors struct {
 }
 
 type jsonDetails struct {
-	DisplayPriority int `json:"displaypriority"`
-	IsSeasonal      int `json:"isseasonal"`
-	SpecialEvent    int `json:"specialevent"`
+	DisplayPriority interface{} `json:"displaypriority"`
+	IsSeasonal      interface{} `json:"isseasonal"`
+	SpecialEvent    interface{} `json:"specialevent"`
 }
 
-func loadEventsSchedule(filePath string) (*events, error) {
-	xmlFile, err := os.Open(filePath)
+func loadEventsSchedule(filePath string) (*jsonEvents, error) {
+	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
+		logger.Error(err)
 		return nil, err
 	}
-	defer xmlFile.Close()
+	defer jsonFile.Close()
 
-	byteValue, err := io.ReadAll(xmlFile)
+	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
-		return nil, err
-	}
-
-	var events events
-	if strings.EqualFold(filepath.Ext(filePath), ".json") {
-		err = unmarshalJsonEvents(byteValue, &events)
-	} else {
-		err = xml.Unmarshal(byteValue, &events)
-	}
-	if err != nil {
-		logger.Error(fmt.Errorf(err.Error()))
+		logger.Error(err)
 		return nil, err
 	}
 
-	logger.Debug(fmt.Sprintf("Unmarshal from XML done successfully, %d events loaded.", len(events.Events)))
+	var events jsonEvents
+	if err = json.Unmarshal(byteValue, &events); err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	logger.Debug(fmt.Sprintf("Unmarshal from JSON done successfully, %d events loaded.", len(events.Events)))
 	return &events, nil
 }
 
-func unmarshalJsonEvents(data []byte, out *events) error {
-	var jsonSchedule jsonEvents
-	if err := json.Unmarshal(data, &jsonSchedule); err != nil {
-		return err
-	}
-
-	out.Events = make([]event, 0, len(jsonSchedule.Events))
-	for _, jsonEvent := range jsonSchedule.Events {
-		out.Events = append(out.Events, event{
-			Name:      jsonEvent.Name,
-			StartDate: normalizeJsonDate(jsonEvent.StartDate),
-			EndDate:   normalizeJsonDate(jsonEvent.EndDate),
-			Colors: colors{
-				Light: jsonEvent.Colors.Light,
-				Dark:  jsonEvent.Colors.Dark,
-			},
-			Description: description{Text: jsonEvent.Description},
-			Details: details{
-				DisplayPriority: strconv.Itoa(jsonEvent.Details.DisplayPriority),
-				IsSeasonal:      strconv.FormatBool(jsonEvent.Details.IsSeasonal != 0),
-				SpecialEvent:    strconv.FormatBool(jsonEvent.Details.SpecialEvent != 0),
-			},
-		})
-	}
-
-	return nil
-}
-
-func normalizeJsonDate(dateStr string) string {
-	parts := strings.Split(dateStr, "/")
-	if len(parts) != 3 {
-		return dateStr
-	}
-
-	return strings.Join([]string{parts[1], parts[0], parts[2]}, "/")
-}
-
 func parseDateString(dateStr string) int {
-	layouts := []string{"02/01/2006", "2/01/2006", "02/1/2006", "2/1/2006"}
+	layouts := []string{
+		"2006-01-02",
+		"02/01/2006",
+		"2/1/2006",
+		"01/02/2006",
+		"1/2/2006",
+	}
+
 	var t time.Time
 	var err error
 	for _, layout := range layouts {
@@ -149,33 +83,68 @@ func parseDateString(dateStr string) int {
 			return int(t.Unix())
 		}
 	}
-	logger.Error(fmt.Errorf(err.Error()))
+
+	logger.Error(fmt.Errorf("failed to parse date %q: %w", dateStr, err))
 	return 0
 }
 
-func processEvents(events *events) []map[string]interface{} {
-	eventList := make([]map[string]interface{}, 0)
+func toInt(value interface{}) int {
+	switch typed := value.(type) {
+	case float64:
+		if math.Trunc(typed) != typed {
+			logger.Error(fmt.Errorf("failed to convert %v to int: value is not a whole number", typed))
+			return 0
+		}
+		return int(typed)
+	case string:
+		parsed, err := strconv.Atoi(typed)
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to convert %q to int: %w", typed, err))
+			return 0
+		}
+		return parsed
+	default:
+		return 0
+	}
+}
+
+func toBool(value interface{}) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case float64:
+		return typed != 0
+	case string:
+		parsed, err := strconv.ParseBool(typed)
+		if err == nil {
+			return parsed
+		}
+
+		number, err := strconv.Atoi(typed)
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to convert %q to bool: %w", typed, err))
+			return false
+		}
+		return number != 0
+	default:
+		return false
+	}
+}
+
+func processEvents(events *jsonEvents) []map[string]interface{} {
+	eventList := make([]map[string]interface{}, 0, len(events.Events))
 
 	for _, event := range events.Events {
-		displayPriority, _ := strconv.Atoi(event.Details.DisplayPriority)
-		isSeasonal, err := strconv.ParseBool(event.Details.IsSeasonal)
-		if err != nil {
-			isSeasonal = false
-		}
-		specialEvent, err := strconv.ParseBool(event.Details.SpecialEvent)
-		if err != nil {
-			specialEvent = false
-		}
 		eventMap := map[string]interface{}{
 			"colorlight":      event.Colors.Light,
 			"colordark":       event.Colors.Dark,
-			"description":     event.Description.Text,
-			"displaypriority": displayPriority,
+			"description":     event.Description,
+			"displaypriority": toInt(event.Details.DisplayPriority),
 			"enddate":         parseDateString(event.EndDate),
-			"isseasonal":      isSeasonal,
+			"isseasonal":      toBool(event.Details.IsSeasonal),
 			"name":            event.Name,
 			"startdate":       parseDateString(event.StartDate),
-			"specialevent":    specialEvent,
+			"specialevent":    toBool(event.Details.SpecialEvent),
 		}
 		eventList = append(eventList, eventMap)
 	}
@@ -183,11 +152,7 @@ func processEvents(events *events) []map[string]interface{} {
 	return eventList
 }
 
-// HandleEventSchedule loads and processes an event schedule from a specified XML file.
-// It takes a Gin context and a string path to the event XML file as arguments.
-// If the event schedule is loaded and processed successfully, it sends back a JSON response
-// with the list of events and the last update timestamp.
-// If there is an error loading or processing the event schedule, it responds with an internal server error.
+// HandleEventSchedule loads and processes an event schedule from the provided path.
 func HandleEventSchedule(c *gin.Context, eventPath string) {
 	events, err := loadEventsSchedule(eventPath)
 	if err != nil {
@@ -195,9 +160,8 @@ func HandleEventSchedule(c *gin.Context, eventPath string) {
 		return
 	}
 
-	eventList := processEvents(events)
 	c.JSON(http.StatusOK, gin.H{
-		"eventlist":           eventList,
+		"eventlist":           processEvents(events),
 		"lastupdatetimestamp": time.Now().Unix(),
 	})
 }

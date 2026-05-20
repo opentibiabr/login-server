@@ -1,10 +1,12 @@
 package database
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"bou.ke/monkey"
+	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
 )
@@ -103,4 +105,13 @@ func TestAccount_GetPremiumTime(t *testing.T) {
 			assert.Equal(t, tt.want, acc.GetPremiumTime())
 		})
 	}
+}
+
+func TestIsMissingAccountSessionsTable(t *testing.T) {
+	assert.True(t, isMissingAccountSessionsTable(&mysqlDriver.MySQLError{
+		Number:  1146,
+		Message: "Table 'otserv.account_sessions' doesn't exist",
+	}))
+	assert.True(t, isMissingAccountSessionsTable(errors.New("table `account_sessions` doesn't exist")))
+	assert.False(t, isMissingAccountSessionsTable(errors.New("connection refused")))
 }

@@ -69,9 +69,13 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 		}
 	}
 
-	coreDirectory := strings.TrimSpace(_api.LuaConfigManager.GetString("coreDirectory"))
-	if _api.ServerPath != "" && coreDirectory != "" {
-		_api.CorePath = filepath.ToSlash(filepath.Join(_api.ServerPath, coreDirectory))
+	if _api.ServerPath != "" {
+		_api.CorePath = filepath.ToSlash(_api.ServerPath)
+
+		coreDirectory := strings.TrimSpace(_api.LuaConfigManager.GetString("coreDirectory"))
+		if coreDirectory != "" {
+			_api.CorePath = filepath.ToSlash(filepath.Join(_api.ServerPath, coreDirectory))
+		}
 	}
 
 	_api.initializeRoutes()

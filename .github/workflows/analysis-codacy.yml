@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@master
+        uses: codacy/codacy-analysis-cli-action@v4
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           verbose: true
@@ -27,7 +27,23 @@ jobs:
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
 
+      - name: Normalize SARIF for GitHub upload
+        run: |
+          python - <<'PY'
+          import json
+
+          with open("results.sarif", encoding="utf-8") as input_file:
+              sarif = json.load(input_file)
+
+          runs = sarif.get("runs", [])
+          if runs:
+              sarif["runs"] = [runs[0]]
+
+          with open("results.github.sarif", "w", encoding="utf-8") as output_file:
+              json.dump(sarif, output_file)
+          PY
+
       - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: results.sarif
+          sarif_file: results.github.sarif

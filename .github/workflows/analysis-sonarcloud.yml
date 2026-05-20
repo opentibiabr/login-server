@@ -3,6 +3,9 @@ name: Analysis - SonarCloud
 
 on:
   workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: false
 
 permissions:
   contents: read

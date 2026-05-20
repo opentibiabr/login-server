@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       analysis: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.analysis }}
       compile: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.compile }}
@@ -58,7 +59,6 @@ jobs:
             analysis:
               - "src/**"
               - "tests/**"
-              - "docker/**"
               - "go.mod"
               - "go.sum"
               - "sonar-project.properties"
@@ -90,20 +90,18 @@ jobs:
   tests-golang:
     name: Tests - Golang
     needs: changes
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    if: (needs.changes.outputs.compile == 'true' || needs.changes.outputs.analysis == 'true') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
     permissions:
       contents: read
     uses: ./.github/workflows/tests-golang.yml
-    secrets: inherit
 
   analysis-golang-lint:
     name: Analysis - Golang Lint
     needs: changes
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    if: (needs.changes.outputs.compile == 'true' || needs.changes.outputs.analysis == 'true') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
     permissions:
       contents: read
     uses: ./.github/workflows/analysis-golang-lint.yml
-    secrets: inherit
 
   analysis-codeql:
     name: Analysis - CodeQL
@@ -114,7 +112,6 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/analysis-codeql.yml
-    secrets: inherit
 
   analysis-codacy:
     name: Analysis - Codacy Security Scan
@@ -124,7 +121,8 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/analysis-codacy.yml
-    secrets: inherit
+    secrets:
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
 
   analysis-sonarcloud:
     name: Analysis - SonarCloud
@@ -134,7 +132,8 @@ jobs:
       contents: read
       pull-requests: read
     uses: ./.github/workflows/analysis-sonarcloud.yml
-    secrets: inherit
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build-ubuntu:
     name: Build - Ubuntu
@@ -143,7 +142,6 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/build-ubuntu.yml
-    secrets: inherit
 
   build-macos:
     name: Build - MacOS
@@ -152,7 +150,6 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/build-macos.yml
-    secrets: inherit
 
   build-windows:
     name: Build - Windows
@@ -161,14 +158,12 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/build-windows.yml
-    secrets: inherit
 
   build-docker:
     name: Build - Docker
     needs: [changes, tests-golang, analysis-golang-lint]
-    if: needs.changes.outputs.docker == 'true' && needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    if: always() && needs.changes.outputs.docker == 'true' && ((needs.tests-golang.result == 'success' && needs.analysis-golang-lint.result == 'success') || (needs.tests-golang.result == 'skipped' && needs.analysis-golang-lint.result == 'skipped')) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/build-docker.yml
-    secrets: inherit

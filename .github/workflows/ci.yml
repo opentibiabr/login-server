@@ -14,6 +14,7 @@ on:
       - "GitVersion.yml"
       - "sonar-project.properties"
       - ".github/workflows/**"
+      - ".github/scripts/**"
   push:
     branches:
       - main
@@ -28,6 +29,7 @@ on:
       - "GitVersion.yml"
       - "sonar-project.properties"
       - ".github/workflows/**"
+      - ".github/scripts/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -82,6 +84,7 @@ jobs:
               - ".github/workflows/build-windows.yml"
               - ".github/workflows/tests-golang.yml"
               - ".github/workflows/analysis-golang-lint.yml"
+              - ".github/scripts/**"
             docker:
               - "docker/**"
               - "src/**"

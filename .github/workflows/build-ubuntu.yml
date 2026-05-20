@@ -24,3 +24,7 @@ jobs:
 
       - name: Build Login Server
         run: go build -o login-server ./src/
+
+      - name: Smoke test Login Server
+        shell: pwsh
+        run: ./.github/scripts/smoke-test.ps1 -BinaryPath ./login-server

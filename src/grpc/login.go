@@ -14,11 +14,11 @@ import (
 
 const DefaultLoginErrorCode = 3
 const temporaryLoginErrorMessage = "Internal error. Please try again later or contact customer support if the problem persists."
-const livestreamUnavailableMessage = "There are no players with the livestream on or it's disabled."
+const livestreamUnavailableMessage = "No active livestream casters found, or livestream login is disabled."
 
 func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginRequest) (*login_proto_messages.LoginResponse, error) {
 	if database.IsLivestreamLogin(in.Email) {
-		return ls.loginLivestream(in.Password)
+		return ls.loginLivestream(ctx, in.Password)
 	}
 
 	acc, err := database.LoadAccount(in.Email, in.Password, ls.DB)
@@ -67,8 +67,8 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	return &res, nil
 }
 
-func (ls *GrpcServer) loginLivestream(password string) (*login_proto_messages.LoginResponse, error) {
-	characters, err := database.LoadLivestreamCasters(ls.DB)
+func (ls *GrpcServer) loginLivestream(ctx context.Context, password string) (*login_proto_messages.LoginResponse, error) {
+	characters, err := database.LoadLivestreamCasters(ctx, ls.DB)
 	if err != nil {
 		logger.Error(err)
 		if errors.Is(err, database.ErrLivestreamCastersUnavailable) {

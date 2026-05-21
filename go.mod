@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	bou.ke/monkey v1.0.2
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/gin-contrib/cors v1.7.2 // indirect
 	github.com/gin-gonic/gin v1.9.1

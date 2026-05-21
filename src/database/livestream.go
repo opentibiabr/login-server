@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 )
 
 const LivestreamSessionAccount = "@livestream"
+const LivestreamStatusActive = 1
 
 var ErrLivestreamCastersUnavailable = errors.New("active livestream caster table unavailable")
 
@@ -20,7 +22,7 @@ func IsLivestreamLogin(email string) bool {
 	return email == LivestreamSessionAccount || email == "@livesteam"
 }
 
-func LoadLivestreamCasters(db *sql.DB) ([]*login_proto_messages.Character, error) {
+func LoadLivestreamCasters(ctx context.Context, db *sql.DB) ([]*login_proto_messages.Character, error) {
 	const query = `
 		SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody,
 			p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin
@@ -29,7 +31,7 @@ func LoadLivestreamCasters(db *sql.DB) ([]*login_proto_messages.Character, error
 		WHERE lc.livestream_status >= ?
 		ORDER BY lc.livestream_viewers DESC, p.name ASC`
 
-	rows, err := db.Query(query, 1)
+	rows, err := db.QueryContext(ctx, query, LivestreamStatusActive)
 	if err != nil {
 		if isMissingLivestreamCastersTable(err) {
 			return nil, fmt.Errorf("%w: %v", ErrLivestreamCastersUnavailable, err)
@@ -57,7 +59,7 @@ func LoadLivestreamCasters(db *sql.DB) ([]*login_proto_messages.Character, error
 			return nil, err
 		}
 
-		if vocation < len(vocations) {
+		if vocation >= 0 && vocation < len(vocations) {
 			caster.Info.Vocation = vocations[vocation]
 		}
 

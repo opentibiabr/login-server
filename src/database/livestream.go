@@ -19,7 +19,7 @@ var ErrLivestreamCastersUnavailable = errors.New("active livestream caster table
 
 func IsLivestreamLogin(email string) bool {
 	email = strings.ToLower(strings.TrimSpace(email))
-	return email == LivestreamSessionAccount || email == "@livesteam"
+	return email == LivestreamSessionAccount
 }
 
 func LoadLivestreamCasters(ctx context.Context, db *sql.DB) ([]*login_proto_messages.Character, error) {

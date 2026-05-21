@@ -18,9 +18,8 @@ func TestIsLivestreamLogin(t *testing.T) {
 	}{
 		{name: "canonical", email: "@livestream", want: true},
 		{name: "canonical with spaces and case", email: " @LiveStream ", want: true},
-		{name: "accepted typo", email: "@livesteam", want: true},
+		{name: "plain descriptor", email: "livestream", want: false},
 		{name: "empty", email: "", want: false},
-		{name: "typo as regular email", email: "user@LiveSteam.com", want: false},
 		{name: "livestream substring", email: "user@livestream2.com", want: false},
 		{name: "regular account", email: "player@example.com", want: false},
 	}

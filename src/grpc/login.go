@@ -14,8 +14,13 @@ import (
 
 const DefaultLoginErrorCode = 3
 const temporaryLoginErrorMessage = "Internal error. Please try again later or contact customer support if the problem persists."
+const livestreamUnavailableMessage = "There are no players with the livestream on or it's disabled."
 
 func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginRequest) (*login_proto_messages.LoginResponse, error) {
+	if database.IsLivestreamLogin(in.Email) {
+		return ls.loginLivestream(in.Password)
+	}
+
 	acc, err := database.LoadAccount(in.Email, in.Password, ls.DB)
 	if err != nil {
 		return &login_proto_messages.LoginResponse{
@@ -60,4 +65,45 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	}).Debug("processed")
 
 	return &res, nil
+}
+
+func (ls *GrpcServer) loginLivestream(password string) (*login_proto_messages.LoginResponse, error) {
+	characters, err := database.LoadLivestreamCasters(ls.DB)
+	if err != nil {
+		logger.Error(err)
+		if errors.Is(err, database.ErrLivestreamCastersUnavailable) {
+			return buildLivestreamUnavailableResponse(), nil
+		}
+		return nil, err
+	}
+
+	if len(characters) == 0 {
+		return buildLivestreamUnavailableResponse(), nil
+	}
+
+	return &login_proto_messages.LoginResponse{
+		PlayData: &login_proto_messages.PlayData{
+			Characters: characters,
+			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
+		},
+		Session: buildLivestreamSession(password),
+	}, nil
+}
+
+func buildLivestreamUnavailableResponse() *login_proto_messages.LoginResponse {
+	return &login_proto_messages.LoginResponse{
+		Error: &login_proto_messages.Error{
+			Code:    DefaultLoginErrorCode,
+			Message: livestreamUnavailableMessage,
+		},
+	}
+}
+
+func buildLivestreamSession(password string) *login_proto_messages.Session {
+	return &login_proto_messages.Session{
+		IsPremium:    false,
+		PremiumUntil: 0,
+		SessionKey:   database.LivestreamSessionAccount + "\n" + password,
+		LastLogin:    0,
+	}
 }

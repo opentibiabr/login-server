@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha1"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -66,7 +67,7 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 	}
 
 	sessionKey := hex.EncodeToString(raw)
-	hash := sha1.Sum([]byte(sessionKey))
+	hash := sha256.Sum256([]byte(sessionKey))
 	expires := time.Now().Add(sessionDuration).Unix()
 
 	if ctx == nil {

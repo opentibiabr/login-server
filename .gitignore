@@ -4,3 +4,5 @@
 bin
 vendor
 .vscode
+.env
+*.log

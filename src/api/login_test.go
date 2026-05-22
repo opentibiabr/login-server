@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"os"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/api/models"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -327,11 +327,13 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 	tests := []struct {
 		name       string
 		sessionKey string
+		authType   string
 		assertions func(*testing.T, loginResponsePayload)
 	}{
 		{
 			name:       "legacy session key",
 			sessionKey: "user@example.com\npassword123",
+			authType:   "",
 			assertions: func(t *testing.T, payload loginResponsePayload) {
 				assert.Equal(t, "user@example.com\npassword123", payload.Session.SessionKey)
 			},
@@ -339,8 +341,17 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 		{
 			name:       "random token session key",
 			sessionKey: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+			authType:   "",
 			assertions: func(t *testing.T, payload loginResponsePayload) {
 				assert.Equal(t, 64, len(payload.Session.SessionKey))
+			},
+		},
+		{
+			name:       "password auth rewrites session key",
+			sessionKey: "opaque-from-grpc",
+			authType:   "password",
+			assertions: func(t *testing.T, payload loginResponsePayload) {
+				assert.Equal(t, "user@example.com\npassword123", payload.Session.SessionKey)
 			},
 		},
 	}
@@ -356,6 +367,15 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 					},
 					PlayData: &login_proto_messages.PlayData{},
 				}),
+			}
+			if tt.authType != "" {
+				tmpDir := t.TempDir()
+				configPath := filepath.Join(tmpDir, "config.lua")
+				err := os.WriteFile(configPath, []byte("authType = \""+tt.authType+"\"\n"), 0o600)
+				assert.NoError(t, err)
+				manager, err := configs.NewLuaConfigManager(configPath)
+				assert.NoError(t, err)
+				api.LuaConfigManager = manager
 			}
 
 			router := gin.New()

@@ -265,3 +265,8 @@ func TestLuaConfigManager_LoadsInlineComments(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "password", manager.GetString("authType"))
 }
+
+func TestCleanLuaLine_PreservesCommentMarkerAfterEscapedQuote(t *testing.T) {
+	assert.Equal(t, `authType = "pa\"--ss"`, cleanLuaLine(`authType = "pa\"--ss" -- trailing comment`))
+	assert.Equal(t, `authType = 'pa\'--ss'`, cleanLuaLine(`authType = 'pa\'--ss' -- trailing comment`))
+}

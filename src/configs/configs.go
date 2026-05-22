@@ -105,9 +105,10 @@ func cleanLuaLine(line string) string {
 	inSingleQuotes := false
 	inDoubleQuotes := false
 	for i := 0; i < len(line); i++ {
-		if line[i] == '\'' && !inDoubleQuotes {
+		escapedQuote := isEscapedLuaQuote(line, i)
+		if line[i] == '\'' && !inDoubleQuotes && !escapedQuote {
 			inSingleQuotes = !inSingleQuotes
-		} else if line[i] == '"' && !inSingleQuotes {
+		} else if line[i] == '"' && !inSingleQuotes && !escapedQuote {
 			inDoubleQuotes = !inDoubleQuotes
 		}
 		if i+1 < len(line) && !inSingleQuotes && !inDoubleQuotes && line[i] == '-' && line[i+1] == '-' {
@@ -117,6 +118,15 @@ func cleanLuaLine(line string) string {
 	}
 
 	return strings.TrimSpace(result.String())
+}
+
+func isEscapedLuaQuote(line string, index int) bool {
+	backslashes := 0
+	for i := index - 1; i >= 0 && line[i] == '\\'; i-- {
+		backslashes++
+	}
+
+	return backslashes%2 == 1
 }
 
 // NewLuaConfigManager creates a new instance of LuaConfigManager by loading configurations from the specified Lua file.

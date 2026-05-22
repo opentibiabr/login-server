@@ -22,7 +22,7 @@ func main() {
 	err := configs.Init()
 	logger.Init(configs.GetLogLevel(), configs.GetLogFile())
 	logger.Info("Welcome to OTBR Login Server")
-	logger.Info("Loading configurations...")
+	logger.Info("Configurations loaded")
 	if err != nil {
 		logger.Debug("Failed to load '.env' in dev environment, going with default.")
 	}

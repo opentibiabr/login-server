@@ -117,7 +117,7 @@ func buildTemporaryErrorPayload() models.LoginErrorPayload {
 func buildErrorPayloadFromPublicError(err *serviceerrors.PublicError) models.LoginErrorPayload {
 	return models.LoginErrorPayload{
 		ErrorCode:    err.Code,
-		ErrorMessage: err.Message,
+		ErrorMessage: serviceerrors.MessageWithHint(err),
 	}
 }
 

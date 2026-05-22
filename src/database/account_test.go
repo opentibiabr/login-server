@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -74,6 +75,18 @@ func TestAccount_IsAdmin(t *testing.T) {
 	assert.False(t, (&Account{Type: 3}).IsAdmin())
 	assert.True(t, (&Account{Type: 4}).IsAdmin())
 	assert.True(t, (&Account{Type: 6}).IsAdmin())
+}
+
+func TestAccount_CreateSessionRejectsNilReceiver(t *testing.T) {
+	var acc *Account
+
+	_, err := acc.CreateSession(context.Background(), nil)
+
+	publicErr, ok := serviceerrors.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, serviceerrors.CodeSessionCreateFailed, publicErr.Code)
+	assert.Equal(t, "SESSION_CREATE_FAILED", publicErr.Name)
+	assert.ErrorContains(t, publicErr, "account is nil")
 }
 
 func TestAccount_GetPremiumTime(t *testing.T) {

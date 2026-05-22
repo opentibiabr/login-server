@@ -15,6 +15,12 @@ const EnvServerPathKey = "SERVER_PATH"
 const DefaultServerName = "OTServBR-Global"
 
 const (
+	ConfigErrorCodeUnknown              = 1000
+	ConfigErrorCodeServerNameMismatch   = 1001
+	ConfigErrorCodeServerConfigInvalid  = 1002
+	ConfigErrorCodeServerConfigNotFound = 1003
+
+	ConfigErrorUnknown              = "UNKNOWN_CONFIG_ERROR"
 	ConfigErrorServerConfigNotFound = "SERVER_CONFIG_NOT_FOUND"
 	ConfigErrorServerConfigInvalid  = "SERVER_CONFIG_INVALID"
 	ConfigErrorServerNameMismatch   = "SERVER_NAME_MISMATCH"
@@ -35,6 +41,13 @@ func (err *ConfigurationError) Error() string {
 		return fmt.Sprintf("%s: %s: %v", err.Name, err.Message, err.Cause)
 	}
 	return fmt.Sprintf("%s: %s", err.Name, err.Message)
+}
+
+func (err *ConfigurationError) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+	return err.Cause
 }
 
 type GameServerConfigs struct {
@@ -77,7 +90,7 @@ func ValidateGameServerName(gameConfigs GameServerConfigs) error {
 	manager, err := NewLuaConfigManager(configPath)
 	if err != nil {
 		return &ConfigurationError{
-			Code:    1002,
+			Code:    ConfigErrorCodeServerConfigInvalid,
 			Name:    ConfigErrorServerConfigInvalid,
 			Message: fmt.Sprintf("failed to load Canary config from %s", configPath),
 			Cause:   err,
@@ -87,7 +100,7 @@ func ValidateGameServerName(gameConfigs GameServerConfigs) error {
 	canaryServerName := strings.TrimSpace(manager.GetString("serverName"))
 	if canaryServerName == "" {
 		return &ConfigurationError{
-			Code:    1002,
+			Code:    ConfigErrorCodeServerConfigInvalid,
 			Name:    ConfigErrorServerConfigInvalid,
 			Message: fmt.Sprintf("Canary config %s does not define serverName", configPath),
 		}
@@ -98,7 +111,7 @@ func ValidateGameServerName(gameConfigs GameServerConfigs) error {
 	}
 
 	return &ConfigurationError{
-		Code: 1001,
+		Code: ConfigErrorCodeServerNameMismatch,
 		Name: ConfigErrorServerNameMismatch,
 		Message: fmt.Sprintf(
 			"login-server SERVER_NAME=%q but Canary config.lua serverName=%q",
@@ -124,7 +137,7 @@ func findServerConfigPath(serverPath string) (string, error) {
 	}
 
 	return "", &ConfigurationError{
-		Code:    1003,
+		Code:    ConfigErrorCodeServerConfigNotFound,
 		Name:    ConfigErrorServerConfigNotFound,
 		Message: "SERVER_PATH does not contain config.lua or config.lua.dist",
 	}
@@ -135,7 +148,7 @@ func configFileExists(path string) (bool, error) {
 	if err == nil {
 		if info.IsDir() {
 			return false, &ConfigurationError{
-				Code:    1002,
+				Code:    ConfigErrorCodeServerConfigInvalid,
 				Name:    ConfigErrorServerConfigInvalid,
 				Message: fmt.Sprintf("%s is a directory, expected a config file", path),
 			}
@@ -148,7 +161,7 @@ func configFileExists(path string) (bool, error) {
 	}
 
 	return false, &ConfigurationError{
-		Code:    1002,
+		Code:    ConfigErrorCodeServerConfigInvalid,
 		Name:    ConfigErrorServerConfigInvalid,
 		Message: fmt.Sprintf("failed to inspect Canary config path %s", path),
 		Cause:   err,

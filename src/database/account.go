@@ -74,6 +74,13 @@ func (acc *Account) IsAdmin() bool {
 }
 
 func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, error) {
+	if acc == nil {
+		return "", serviceerrors.LoginService(
+			serviceerrors.CodeSessionCreateFailed,
+			"SESSION_CREATE_FAILED",
+			errors.New("account is nil"),
+		)
+	}
 	if db == nil {
 		return "", serviceerrors.LoginService(
 			serviceerrors.CodeDatabaseUnavailable,

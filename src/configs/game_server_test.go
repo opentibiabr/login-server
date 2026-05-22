@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,6 +86,17 @@ func TestValidateGameServerName(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("accepts matching canary server name from dist config", func(t *testing.T) {
+		tempDir := t.TempDir()
+		t.Setenv(EnvServerPathKey, tempDir)
+		err := os.WriteFile(filepath.Join(tempDir, "config.lua.dist"), []byte(`serverName = "Canary"`), 0o600)
+		assert.NoError(t, err)
+
+		err = ValidateGameServerName(GameServerConfigs{Name: "Canary"})
+
+		assert.NoError(t, err)
+	})
+
 	t.Run("rejects mismatching canary server name", func(t *testing.T) {
 		tempDir := t.TempDir()
 		t.Setenv(EnvServerPathKey, tempDir)
@@ -95,7 +107,7 @@ func TestValidateGameServerName(t *testing.T) {
 
 		var configErr *ConfigurationError
 		assert.ErrorAs(t, err, &configErr)
-		assert.Equal(t, 1001, configErr.Code)
+		assert.Equal(t, ConfigErrorCodeServerNameMismatch, configErr.Code)
 		assert.Equal(t, ConfigErrorServerNameMismatch, configErr.Name)
 		assert.Equal(t, `login-server SERVER_NAME="OtherWorld" but Canary config.lua serverName="Canary"`, configErr.Message)
 	})
@@ -107,7 +119,7 @@ func TestValidateGameServerName(t *testing.T) {
 
 		var configErr *ConfigurationError
 		assert.ErrorAs(t, err, &configErr)
-		assert.Equal(t, 1003, configErr.Code)
+		assert.Equal(t, ConfigErrorCodeServerConfigNotFound, configErr.Code)
 		assert.Equal(t, ConfigErrorServerConfigNotFound, configErr.Name)
 	})
 
@@ -121,7 +133,7 @@ func TestValidateGameServerName(t *testing.T) {
 
 		var configErr *ConfigurationError
 		assert.ErrorAs(t, err, &configErr)
-		assert.Equal(t, 1002, configErr.Code)
+		assert.Equal(t, ConfigErrorCodeServerConfigInvalid, configErr.Code)
 		assert.Equal(t, ConfigErrorServerConfigInvalid, configErr.Name)
 	})
 
@@ -130,9 +142,16 @@ func TestValidateGameServerName(t *testing.T) {
 
 		var configErr *ConfigurationError
 		assert.ErrorAs(t, err, &configErr)
-		assert.Equal(t, 1002, configErr.Code)
+		assert.Equal(t, ConfigErrorCodeServerConfigInvalid, configErr.Code)
 		assert.Equal(t, ConfigErrorServerConfigInvalid, configErr.Name)
 	})
+}
+
+func TestConfigurationErrorUnwrap(t *testing.T) {
+	cause := errors.New("root cause")
+	err := &ConfigurationError{Cause: cause}
+
+	assert.ErrorIs(t, err, cause)
 }
 
 func TestGetServerVocations(t *testing.T) {

@@ -80,25 +80,25 @@ func buildLoginErrorResponse(err error, includeAdminHint bool) *login_proto_mess
 	return &login_proto_messages.LoginResponse{
 		Error: &login_proto_messages.Error{
 			Code:    uint32(publicErr.Code),
-			Message: publicErr.Message,
+			Message: serviceerrors.MessageWithHint(publicErr),
 		},
 	}
 }
 
 func buildConfigurationErrorResponse(configErr *configs.ConfigurationError, includeAdminHint bool) *login_proto_messages.LoginResponse {
-	message := fmt.Sprintf(configurationErrorMessage, configErr.Name, configErr.Code)
+	publicErr := &serviceerrors.PublicError{
+		Code:    configErr.Code,
+		Name:    configErr.Name,
+		Message: fmt.Sprintf(configurationErrorMessage, configErr.Name, configErr.Code),
+	}
 	if includeAdminHint {
-		message = serviceerrors.WithHint(&serviceerrors.PublicError{
-			Code:    configErr.Code,
-			Name:    configErr.Name,
-			Message: message,
-		}, serviceerrors.AdminHint(configErr.Name)).Message
+		publicErr = serviceerrors.WithHint(publicErr, serviceerrors.AdminHint(configErr.Name))
 	}
 
 	return &login_proto_messages.LoginResponse{
 		Error: &login_proto_messages.Error{
 			Code:    uint32(configErr.Code),
-			Message: message,
+			Message: serviceerrors.MessageWithHint(publicErr),
 		},
 	}
 }
@@ -110,8 +110,8 @@ func toConfigurationError(err error) *configs.ConfigurationError {
 	}
 
 	return &configs.ConfigurationError{
-		Code:    1000,
-		Name:    "UNKNOWN_CONFIG_ERROR",
+		Code:    configs.ConfigErrorCodeUnknown,
+		Name:    configs.ConfigErrorUnknown,
 		Message: err.Error(),
 		Cause:   err,
 	}

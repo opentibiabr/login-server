@@ -17,6 +17,7 @@ import (
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -405,4 +406,29 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_loginHandlerReturnsNamedErrorWhenGrpcConnectionIsMissing(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.POST("/login", (&Api{}).login)
+
+	requestBody, _ := json.Marshal(models.RequestPayload{
+		Type:     "login",
+		Email:    "user@example.com",
+		Password: "password123",
+	})
+	request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(requestBody))
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var payload models.LoginErrorPayload
+	err := json.Unmarshal(recorder.Body.Bytes(), &payload)
+	assert.NoError(t, err)
+	assert.Equal(t, serviceerrors.CodeLoginServiceUnavailable, payload.ErrorCode)
+	assert.Equal(t, "Login service error. Please contact support. Error: LOGIN_SERVICE_UNAVAILABLE (LS-3001).", payload.ErrorMessage)
 }

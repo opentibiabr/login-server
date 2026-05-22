@@ -2,13 +2,30 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
 func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, error) {
+	if db == nil {
+		return nil, serviceerrors.LoginService(
+			serviceerrors.CodeDatabaseUnavailable,
+			"DATABASE_UNAVAILABLE",
+			errors.New("database connection is nil"),
+		)
+	}
+	if acc == nil {
+		return nil, serviceerrors.LoginService(
+			serviceerrors.CodeCharacterListLoadFailed,
+			"CHARACTER_LIST_LOAD_FAILED",
+			errors.New("account is nil"),
+		)
+	}
+
 	var players []*login_proto_messages.Character
 
 	statement := fmt.Sprintf(
@@ -19,7 +36,11 @@ func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, e
 
 	rows, err := db.Query(statement)
 	if err != nil {
-		return nil, err
+		return nil, serviceerrors.LoginService(
+			serviceerrors.CodeCharacterListLoadFailed,
+			"CHARACTER_LIST_LOAD_FAILED",
+			err,
+		)
 	}
 
 	defer rows.Close()
@@ -42,7 +63,11 @@ func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, e
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, serviceerrors.LoginService(
+				serviceerrors.CodeCharacterListLoadFailed,
+				"CHARACTER_LIST_LOAD_FAILED",
+				err,
+			)
 		}
 
 		if acc.LastLogin < player.Info.LastLogin {
@@ -54,6 +79,14 @@ func LoadPlayers(db *sql.DB, acc *Account) ([]*login_proto_messages.Character, e
 		}
 
 		players = append(players, &player)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, serviceerrors.LoginService(
+			serviceerrors.CodeCharacterListLoadFailed,
+			"CHARACTER_LIST_LOAD_FAILED",
+			err,
+		)
 	}
 
 	return players, nil

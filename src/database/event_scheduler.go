@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
 type jsonEvents struct {
@@ -156,7 +157,11 @@ func processEvents(events *jsonEvents) []map[string]interface{} {
 func HandleEventSchedule(c *gin.Context, eventPath string) {
 	events, err := loadEventsSchedule(eventPath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		writeServiceError(c, serviceerrors.GameData(
+			serviceerrors.CodeEventScheduleUnavailable,
+			"EVENT_SCHEDULE_UNAVAILABLE",
+			err,
+		))
 		return
 	}
 

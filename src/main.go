@@ -16,14 +16,13 @@ var numberOfServers = 2
 var initDelay = 200
 
 func main() {
-	logger.Init(configs.GetLogLevel())
-	logger.Info("Welcome to OTBR Login Server")
-	logger.Info("Loading configurations...")
-
 	var wg sync.WaitGroup
 	wg.Add(numberOfServers)
 
 	err := configs.Init()
+	logger.Init(configs.GetLogLevel(), configs.GetLogFile())
+	logger.Info("Welcome to OTBR Login Server")
+	logger.Info("Loading configurations...")
 	if err != nil {
 		logger.Debug("Failed to load '.env' in dev environment, going with default.")
 	}

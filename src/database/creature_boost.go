@@ -6,14 +6,20 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
 func loadBoostedCreatureData(db *sql.DB) (uint32, uint32, error) {
+	if db == nil {
+		return 0, 0, errors.New("database connection is nil")
+	}
+
 	var creatureRaceID uint32
 	var bossRaceID uint32
 
@@ -56,7 +62,11 @@ func checkAndUpdateBoostedCreatureData(db *sql.DB, creatureRaceID *uint32, bossR
 // boosted creature status and the current race IDs for the creature and boss.
 func HandleBoostedCreature(c *gin.Context, db *sql.DB, creatureRaceID *uint32, bossRaceID *uint32) {
 	if err := checkAndUpdateBoostedCreatureData(db, creatureRaceID, bossRaceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeServiceError(c, serviceerrors.GameData(
+			serviceerrors.CodeBoostedDataUnavailable,
+			"BOOSTED_DATA_UNAVAILABLE",
+			err,
+		))
 		return
 	}
 

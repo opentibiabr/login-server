@@ -44,6 +44,7 @@ You can also download our docker image and apply the environment variables to yo
 |`MYSQL_PASS`         | `database password`                  |
 |`MYSQL_USER`         | `database username`                  |
 |`ENV_LOG_LEVEL`      | `logrus log level for verbose` [ref](https://pkg.go.dev/github.com/sirupsen/logrus#Level)   |
+|`ENV_LOG_FILE`       | `optional log file path, defaults to logs/login-server.txt` |
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
 |`LOGIN_GRPC_PORT`    | `login grpc port`                    |

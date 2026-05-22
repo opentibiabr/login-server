@@ -9,6 +9,8 @@ import (
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
 const temporaryErrorCode = 2
@@ -29,6 +31,15 @@ func (_api *Api) login(c *gin.Context) {
 	case "boostedcreature":
 		database.HandleBoostedCreature(c, _api.DB, &_api.BoostedCreatureID, &_api.BoostedBossID)
 	case "login":
+		if _api.GrpcConnection == nil {
+			writePublicError(c, serviceerrors.LoginService(
+				serviceerrors.CodeLoginServiceUnavailable,
+				"LOGIN_SERVICE_UNAVAILABLE",
+				fmt.Errorf("grpc connection is nil"),
+			))
+			return
+		}
+
 		grpcClient := login_proto_messages.NewLoginServiceClient(_api.GrpcConnection)
 
 		res, err := grpcClient.Login(
@@ -37,7 +48,11 @@ func (_api *Api) login(c *gin.Context) {
 		)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			writePublicError(c, serviceerrors.LoginService(
+				serviceerrors.CodeLoginServiceUnavailable,
+				"LOGIN_SERVICE_UNAVAILABLE",
+				err,
+			))
 			return
 		}
 
@@ -50,7 +65,11 @@ func (_api *Api) login(c *gin.Context) {
 		response.Session.SessionKey = buildSessionKey(response.Session.SessionKey, _api.authTypeIsPassword(), payload.Email, payload.Password)
 		c.JSON(http.StatusOK, response)
 	default:
-		c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
+		writePublicError(c, serviceerrors.LoginService(
+			serviceerrors.CodeUnsupportedRequestType,
+			"UNSUPPORTED_REQUEST_TYPE",
+			fmt.Errorf("unsupported login request type %q", payload.Type),
+		))
 	}
 }
 
@@ -93,4 +112,18 @@ func buildTemporaryErrorPayload() models.LoginErrorPayload {
 		ErrorCode:    temporaryErrorCode,
 		ErrorMessage: temporaryErrorMessage,
 	}
+}
+
+func buildErrorPayloadFromPublicError(err *serviceerrors.PublicError) models.LoginErrorPayload {
+	return models.LoginErrorPayload{
+		ErrorCode:    err.Code,
+		ErrorMessage: err.Message,
+	}
+}
+
+func writePublicError(c *gin.Context, err *serviceerrors.PublicError) {
+	if err.Cause != nil {
+		logger.Error(err)
+	}
+	c.JSON(http.StatusOK, buildErrorPayloadFromPublicError(err))
 }

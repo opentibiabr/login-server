@@ -2,6 +2,7 @@ package configs
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -62,6 +63,53 @@ func TestGetGameServerConfigs(t *testing.T) {
 			assert.Equal(t, tt.want, GetGameServerConfigs())
 		})
 	}
+}
+
+func TestValidateGameServerName(t *testing.T) {
+	t.Run("skips validation without server path", func(t *testing.T) {
+		t.Setenv(EnvServerPathKey, "")
+
+		err := ValidateGameServerName(GameServerConfigs{Name: "LoginName"})
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("accepts matching canary server name", func(t *testing.T) {
+		tempDir := t.TempDir()
+		t.Setenv(EnvServerPathKey, tempDir)
+		err := os.WriteFile(filepath.Join(tempDir, "config.lua"), []byte(`serverName = "Canary"`), 0o600)
+		assert.NoError(t, err)
+
+		err = ValidateGameServerName(GameServerConfigs{Name: "Canary"})
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("rejects mismatching canary server name", func(t *testing.T) {
+		tempDir := t.TempDir()
+		t.Setenv(EnvServerPathKey, tempDir)
+		err := os.WriteFile(filepath.Join(tempDir, "config.lua"), []byte(`serverName = "Canary"`), 0o600)
+		assert.NoError(t, err)
+
+		err = ValidateGameServerName(GameServerConfigs{Name: "OtherWorld"})
+
+		var configErr *ConfigurationError
+		assert.ErrorAs(t, err, &configErr)
+		assert.Equal(t, 1001, configErr.Code)
+		assert.Equal(t, ConfigErrorServerNameMismatch, configErr.Name)
+		assert.Equal(t, `login-server SERVER_NAME="OtherWorld" but Canary config.lua serverName="Canary"`, configErr.Message)
+	})
+
+	t.Run("returns reportable error when server config is missing", func(t *testing.T) {
+		t.Setenv(EnvServerPathKey, t.TempDir())
+
+		err := ValidateGameServerName(GameServerConfigs{Name: "Canary"})
+
+		var configErr *ConfigurationError
+		assert.ErrorAs(t, err, &configErr)
+		assert.Equal(t, 1003, configErr.Code)
+		assert.Equal(t, ConfigErrorServerConfigNotFound, configErr.Name)
+	})
 }
 
 func TestGetServerVocations(t *testing.T) {

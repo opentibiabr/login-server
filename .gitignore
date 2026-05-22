@@ -6,3 +6,4 @@ vendor
 .vscode
 .env
 *.log
+logs/

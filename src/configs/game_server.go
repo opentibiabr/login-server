@@ -2,6 +2,8 @@ package configs
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -9,7 +11,31 @@ const EnvServerIpKey = "SERVER_IP"
 const EnvServerLocationKey = "SERVER_LOCATION"
 const EnvServerNameKey = "SERVER_NAME"
 const EnvServerPortKey = "SERVER_PORT"
+const EnvServerPathKey = "SERVER_PATH"
 const DefaultServerName = "OTServBR-Global"
+
+const (
+	ConfigErrorServerConfigNotFound = "SERVER_CONFIG_NOT_FOUND"
+	ConfigErrorServerConfigInvalid  = "SERVER_CONFIG_INVALID"
+	ConfigErrorServerNameMismatch   = "SERVER_NAME_MISMATCH"
+)
+
+type ConfigurationError struct {
+	Code    int
+	Name    string
+	Message string
+	Cause   error
+}
+
+func (err *ConfigurationError) Error() string {
+	if err == nil {
+		return ""
+	}
+	if err.Cause != nil {
+		return fmt.Sprintf("%s: %s: %v", err.Name, err.Message, err.Cause)
+	}
+	return fmt.Sprintf("%s: %s", err.Name, err.Message)
+}
 
 type GameServerConfigs struct {
 	Port     int
@@ -34,6 +60,61 @@ func GetGameServerConfigs() GameServerConfigs {
 		Name:     GetEnvStr(EnvServerNameKey, DefaultServerName),
 		Port:     GetEnvInt(EnvServerPortKey, 7172),
 		Location: GetEnvStr(EnvServerLocationKey, "BRA"),
+	}
+}
+
+func ValidateGameServerName(gameConfigs GameServerConfigs) error {
+	serverPath := strings.TrimSpace(GetEnvStr(EnvServerPathKey, ""))
+	if serverPath == "" {
+		return nil
+	}
+
+	configPath, err := findServerConfigPath(serverPath)
+	if err != nil {
+		return err
+	}
+
+	manager, err := NewLuaConfigManager(configPath)
+	if err != nil {
+		return &ConfigurationError{
+			Code:    1002,
+			Name:    ConfigErrorServerConfigInvalid,
+			Message: fmt.Sprintf("failed to load Canary config from %s", configPath),
+			Cause:   err,
+		}
+	}
+
+	canaryServerName := strings.TrimSpace(manager.GetString("serverName"))
+	if canaryServerName == "" || canaryServerName == strings.TrimSpace(gameConfigs.Name) {
+		return nil
+	}
+
+	return &ConfigurationError{
+		Code: 1001,
+		Name: ConfigErrorServerNameMismatch,
+		Message: fmt.Sprintf(
+			"login-server SERVER_NAME=%q but Canary config.lua serverName=%q",
+			gameConfigs.Name,
+			canaryServerName,
+		),
+	}
+}
+
+func findServerConfigPath(serverPath string) (string, error) {
+	configPath := filepath.Join(serverPath, "config.lua")
+	if _, err := os.Stat(configPath); err == nil {
+		return configPath, nil
+	}
+
+	distPath := filepath.Join(serverPath, "config.lua.dist")
+	if _, err := os.Stat(distPath); err == nil {
+		return distPath, nil
+	}
+
+	return "", &ConfigurationError{
+		Code:    1003,
+		Name:    ConfigErrorServerConfigNotFound,
+		Message: "SERVER_PATH does not contain config.lua or config.lua.dist",
 	}
 }
 

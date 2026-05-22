@@ -343,7 +343,7 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 			sessionKey: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
 			authType:   "",
 			assertions: func(t *testing.T, payload loginResponsePayload) {
-				assert.Equal(t, 64, len(payload.Session.SessionKey))
+				assert.Equal(t, "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", payload.Session.SessionKey)
 			},
 		},
 		{

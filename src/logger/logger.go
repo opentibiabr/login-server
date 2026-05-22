@@ -17,6 +17,10 @@ var logger = log.New()
 var logFile *os.File
 var loggerMu sync.Mutex
 
+type Entry struct {
+	fields log.Fields
+}
+
 func Init(level log.Level, logFilePaths ...string) {
 	loggerMu.Lock()
 	defer loggerMu.Unlock()
@@ -42,11 +46,27 @@ func Init(level log.Level, logFilePaths ...string) {
 	logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
 }
 
-func WithFields(fields log.Fields) *log.Entry {
+func WithFields(fields log.Fields) *Entry {
+	copiedFields := log.Fields{}
+	for key, value := range fields {
+		copiedFields[key] = value
+	}
+
+	return &Entry{fields: copiedFields}
+}
+
+func (entry *Entry) Debug(message string) {
 	loggerMu.Lock()
 	defer loggerMu.Unlock()
 
-	return logger.WithFields(fields)
+	logger.WithFields(entry.fields).Debug(message)
+}
+
+func (entry *Entry) Info(message string) {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
+	logger.WithFields(entry.fields).Info(message)
 }
 
 func Debug(message string) {
@@ -98,7 +118,7 @@ func LogRequest() gin.HandlerFunc {
 
 		c.Next()
 
-		logger.WithFields(log.Fields{
+		WithFields(log.Fields{
 			"0": c.Writer.Status(),
 			"1": "web-server",
 			"2": fmt.Sprintf("%dms", time.Since(start).Milliseconds()),

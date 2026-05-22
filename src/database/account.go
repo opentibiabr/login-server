@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha1"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -38,14 +37,11 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 	h.Write([]byte(acc.Password))
 
 	p := h.Sum(nil)
+	passwordHash := fmt.Sprintf("%x", p)
 
-	statement := fmt.Sprintf(
-		"SELECT id, premdays, lastday FROM accounts WHERE email = '%s' AND password = '%x'",
-		acc.Email,
-		p,
-	)
+	statement := "SELECT id, premdays, lastday FROM accounts WHERE (email = ? OR name = ?) AND password = ?"
 
-	err := db.QueryRow(statement).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
+	err := db.QueryRow(statement, acc.Email, acc.Email, passwordHash).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -70,7 +66,7 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 	}
 
 	sessionKey := hex.EncodeToString(raw)
-	hash := sha256.Sum256([]byte(sessionKey))
+	hash := sha1.Sum([]byte(sessionKey))
 	expires := time.Now().Add(sessionDuration).Unix()
 
 	if ctx == nil {

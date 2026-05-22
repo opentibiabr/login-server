@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -45,10 +46,27 @@ func (_api *Api) login(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, buildPayloadFromMessage(res, payload))
+		response := buildPayloadFromMessage(res, payload)
+		response.Session.SessionKey = buildSessionKey(response.Session.SessionKey, _api.authTypeIsPassword(), payload.Email, payload.Password)
+		c.JSON(http.StatusOK, response)
 	default:
 		c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
 	}
+}
+
+func (api *Api) authTypeIsPassword() bool {
+	if api == nil || api.LuaConfigManager == nil {
+		return false
+	}
+	return api.LuaConfigManager.GetString("authType") == "password"
+}
+
+func buildSessionKey(defaultSessionKey string, authTypeIsPassword bool, email, password string) string {
+	if !authTypeIsPassword {
+		return defaultSessionKey
+	}
+
+	return fmt.Sprintf("%s\n%s", email, password)
 }
 
 func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request models.RequestPayload) models.ResponsePayload {

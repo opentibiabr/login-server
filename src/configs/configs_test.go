@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -252,4 +253,22 @@ func TestGetGlobalConfigs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLuaConfigManager_LoadsInlineComments(t *testing.T) {
+	tempDir := t.TempDir()
+	configPath := filepath.Join(tempDir, "config.lua")
+	err := os.WriteFile(configPath, []byte("authType = \"password\" -- legacy account/password auth"), 0o600)
+	assert.Nil(t, err)
+
+	manager, err := NewLuaConfigManager(configPath)
+	assert.Nil(t, err)
+	assert.Equal(t, "password", manager.GetString("authType"))
+}
+
+func TestCleanLuaLine_PreservesCommentMarkerAfterEscapedQuote(t *testing.T) {
+	assert.Equal(t, `authType = "pa\"--ss"`, cleanLuaLine(`authType = "pa\"--ss" -- trailing comment`))
+	assert.Equal(t, `authType = 'pa\'--ss'`, cleanLuaLine(`authType = 'pa\'--ss' -- trailing comment`))
+	assert.Equal(t, `authType = "pa\\"`, cleanLuaLine(`authType = "pa\\"--ss" -- trailing comment`))
+	assert.Equal(t, `authType = 'pa\\'`, cleanLuaLine(`authType = 'pa\\'--ss' -- trailing comment`))
 }

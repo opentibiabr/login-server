@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/opentibiabr/login-server/src/logger"
@@ -80,7 +81,7 @@ func (manager *LuaConfigManager) loadConfigs(filePath string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := cleanLuaLine(scanner.Text())
 		matches := re.FindStringSubmatch(line)
 		if len(matches) == 3 {
 			manager.configs[matches[1]] = matches[2]
@@ -92,6 +93,40 @@ func (manager *LuaConfigManager) loadConfigs(filePath string) error {
 	}
 
 	return nil
+}
+
+func cleanLuaLine(line string) string {
+	line = strings.TrimSpace(line)
+	if line == "" || strings.HasPrefix(line, "--") {
+		return ""
+	}
+
+	var result strings.Builder
+	inSingleQuotes := false
+	inDoubleQuotes := false
+	for i := 0; i < len(line); i++ {
+		escapedQuote := isEscapedLuaQuote(line, i)
+		if line[i] == '\'' && !inDoubleQuotes && !escapedQuote {
+			inSingleQuotes = !inSingleQuotes
+		} else if line[i] == '"' && !inSingleQuotes && !escapedQuote {
+			inDoubleQuotes = !inDoubleQuotes
+		}
+		if i+1 < len(line) && !inSingleQuotes && !inDoubleQuotes && line[i] == '-' && line[i+1] == '-' {
+			break
+		}
+		result.WriteByte(line[i])
+	}
+
+	return strings.TrimSpace(result.String())
+}
+
+func isEscapedLuaQuote(line string, index int) bool {
+	backslashes := 0
+	for i := index - 1; i >= 0 && line[i] == '\\'; i-- {
+		backslashes++
+	}
+
+	return backslashes%2 == 1
 }
 
 // NewLuaConfigManager creates a new instance of LuaConfigManager by loading configurations from the specified Lua file.

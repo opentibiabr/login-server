@@ -38,14 +38,11 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 	h.Write([]byte(acc.Password))
 
 	p := h.Sum(nil)
+	passwordHash := fmt.Sprintf("%x", p)
 
-	statement := fmt.Sprintf(
-		"SELECT id, premdays, lastday FROM accounts WHERE email = '%s' AND password = '%x'",
-		acc.Email,
-		p,
-	)
+	statement := "SELECT id, premdays, lastday FROM accounts WHERE (email = ? OR name = ?) AND password = ?"
 
-	err := db.QueryRow(statement).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
+	err := db.QueryRow(statement, acc.Email, acc.Email, passwordHash).Scan(&acc.ID, &acc.PremDays, &acc.LastDay)
 	if err != nil {
 		log.Println(err.Error())
 		return err

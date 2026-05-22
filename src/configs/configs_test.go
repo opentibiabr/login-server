@@ -266,6 +266,18 @@ func TestLuaConfigManager_LoadsInlineComments(t *testing.T) {
 	assert.Equal(t, "password", manager.GetString("authType"))
 }
 
+func TestLuaConfigManager_LoadsValuesWithMixedQuotes(t *testing.T) {
+	tempDir := t.TempDir()
+	configPath := filepath.Join(tempDir, "config.lua")
+	err := os.WriteFile(configPath, []byte("serverName = \"Canary's World\" -- apostrophe inside double quotes\nowner = 'The \"Admin\"' -- double quotes inside single quotes"), 0o600)
+	assert.Nil(t, err)
+
+	manager, err := NewLuaConfigManager(configPath)
+	assert.Nil(t, err)
+	assert.Equal(t, "Canary's World", manager.GetString("serverName"))
+	assert.Equal(t, `The "Admin"`, manager.GetString("owner"))
+}
+
 func TestCleanLuaLine_PreservesCommentMarkerAfterEscapedQuote(t *testing.T) {
 	assert.Equal(t, `authType = "pa\"--ss"`, cleanLuaLine(`authType = "pa\"--ss" -- trailing comment`))
 	assert.Equal(t, `authType = 'pa\'--ss'`, cleanLuaLine(`authType = 'pa\'--ss' -- trailing comment`))

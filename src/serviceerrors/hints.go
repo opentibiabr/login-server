@@ -27,6 +27,6 @@ func AdminHint(name string) string {
 	case "UNSUPPORTED_REQUEST_TYPE":
 		return "The client sent a login request type not handled by this login-server version; check client/server compatibility."
 	default:
-		return "Check logs/login-server.txt for the full technical error and verify the login-server .env values."
+		return "Check the configured login-server log output for the full technical error and verify the .env values."
 	}
 }

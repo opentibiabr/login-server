@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
@@ -14,8 +15,12 @@ import (
 
 var logger = log.New()
 var logFile *os.File
+var loggerMu sync.Mutex
 
 func Init(level log.Level, logFilePaths ...string) {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	closeLogFile()
 	logger.SetLevel(level)
 	logger.SetFormatter(&nested.Formatter{
@@ -38,18 +43,30 @@ func Init(level log.Level, logFilePaths ...string) {
 }
 
 func WithFields(fields log.Fields) *log.Entry {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	return logger.WithFields(fields)
 }
 
 func Debug(message string) {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	logger.Debug(message)
 }
 
 func Info(message string) {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	logger.Info(message)
 }
 
 func Warn(message string) {
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	logger.Warn(message)
 }
 
@@ -57,6 +74,10 @@ func Error(err error) {
 	if err == nil {
 		return
 	}
+
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	logger.Error(err.Error())
 }
 
@@ -64,6 +85,10 @@ func Panic(err error) {
 	if err == nil {
 		return
 	}
+
+	loggerMu.Lock()
+	defer loggerMu.Unlock()
+
 	logger.Panic(err.Error())
 }
 

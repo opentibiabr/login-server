@@ -110,6 +110,29 @@ func TestValidateGameServerName(t *testing.T) {
 		assert.Equal(t, 1003, configErr.Code)
 		assert.Equal(t, ConfigErrorServerConfigNotFound, configErr.Name)
 	})
+
+	t.Run("returns reportable error when server name is missing", func(t *testing.T) {
+		tempDir := t.TempDir()
+		t.Setenv(EnvServerPathKey, tempDir)
+		err := os.WriteFile(filepath.Join(tempDir, "config.lua"), []byte(`authType = "session"`), 0o600)
+		assert.NoError(t, err)
+
+		err = ValidateGameServerName(GameServerConfigs{Name: "Canary"})
+
+		var configErr *ConfigurationError
+		assert.ErrorAs(t, err, &configErr)
+		assert.Equal(t, 1002, configErr.Code)
+		assert.Equal(t, ConfigErrorServerConfigInvalid, configErr.Name)
+	})
+
+	t.Run("returns reportable error when config path cannot be inspected", func(t *testing.T) {
+		_, err := findServerConfigPath("bad\x00path")
+
+		var configErr *ConfigurationError
+		assert.ErrorAs(t, err, &configErr)
+		assert.Equal(t, 1002, configErr.Code)
+		assert.Equal(t, ConfigErrorServerConfigInvalid, configErr.Name)
+	})
 }
 
 func TestGetServerVocations(t *testing.T) {

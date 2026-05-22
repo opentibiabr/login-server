@@ -75,6 +75,32 @@ func TestGetLogLevel(t *testing.T) {
 	}
 }
 
+func TestGetLogFile(t *testing.T) {
+	t.Run("defaults when unset", func(t *testing.T) {
+		original, exists := os.LookupEnv(EnvLogFile)
+		assert.NoError(t, os.Unsetenv(EnvLogFile))
+		t.Cleanup(func() {
+			if exists {
+				assert.NoError(t, os.Setenv(EnvLogFile, original))
+				return
+			}
+			assert.NoError(t, os.Unsetenv(EnvLogFile))
+		})
+
+		assert.Equal(t, "logs/login-server.txt", GetLogFile())
+	})
+
+	t.Run("uses configured path", func(t *testing.T) {
+		t.Setenv(EnvLogFile, "custom.log")
+		assert.Equal(t, "custom.log", GetLogFile())
+	})
+
+	t.Run("can be disabled with explicit empty value", func(t *testing.T) {
+		t.Setenv(EnvLogFile, "")
+		assert.Equal(t, "", GetLogFile())
+	})
+}
+
 func TestGetLoginServerConfigs(t *testing.T) {
 	tests := []struct {
 		name string

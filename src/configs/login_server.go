@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
@@ -107,5 +108,9 @@ func GetLogLevel() logrus.Level {
 }
 
 func GetLogFile() string {
-	return GetEnvStr(EnvLogFile, "logs/login-server.txt")
+	if value, exists := os.LookupEnv(EnvLogFile); exists {
+		return value
+	}
+
+	return "logs/login-server.txt"
 }

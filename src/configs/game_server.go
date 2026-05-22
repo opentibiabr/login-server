@@ -85,7 +85,15 @@ func ValidateGameServerName(gameConfigs GameServerConfigs) error {
 	}
 
 	canaryServerName := strings.TrimSpace(manager.GetString("serverName"))
-	if canaryServerName == "" || canaryServerName == strings.TrimSpace(gameConfigs.Name) {
+	if canaryServerName == "" {
+		return &ConfigurationError{
+			Code:    1002,
+			Name:    ConfigErrorServerConfigInvalid,
+			Message: fmt.Sprintf("Canary config %s does not define serverName", configPath),
+		}
+	}
+
+	if canaryServerName == strings.TrimSpace(gameConfigs.Name) {
 		return nil
 	}
 
@@ -102,12 +110,16 @@ func ValidateGameServerName(gameConfigs GameServerConfigs) error {
 
 func findServerConfigPath(serverPath string) (string, error) {
 	configPath := filepath.Join(serverPath, "config.lua")
-	if _, err := os.Stat(configPath); err == nil {
+	if exists, err := configFileExists(configPath); err != nil {
+		return "", err
+	} else if exists {
 		return configPath, nil
 	}
 
 	distPath := filepath.Join(serverPath, "config.lua.dist")
-	if _, err := os.Stat(distPath); err == nil {
+	if exists, err := configFileExists(distPath); err != nil {
+		return "", err
+	} else if exists {
 		return distPath, nil
 	}
 
@@ -115,6 +127,31 @@ func findServerConfigPath(serverPath string) (string, error) {
 		Code:    1003,
 		Name:    ConfigErrorServerConfigNotFound,
 		Message: "SERVER_PATH does not contain config.lua or config.lua.dist",
+	}
+}
+
+func configFileExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		if info.IsDir() {
+			return false, &ConfigurationError{
+				Code:    1002,
+				Name:    ConfigErrorServerConfigInvalid,
+				Message: fmt.Sprintf("%s is a directory, expected a config file", path),
+			}
+		}
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, &ConfigurationError{
+		Code:    1002,
+		Name:    ConfigErrorServerConfigInvalid,
+		Message: fmt.Sprintf("failed to inspect Canary config path %s", path),
+		Cause:   err,
 	}
 }
 

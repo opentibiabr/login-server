@@ -181,3 +181,21 @@ func TestClassifyAuthenticationError(t *testing.T) {
 		})
 	}
 }
+
+func TestHashSessionKey(t *testing.T) {
+	// The digest is a contract with the game server, which looks the session up
+	// with transformToSHA1(sessionKey). Changing it silently breaks every world
+	// login while the HTTP login and the character list keep working, so pin it
+	// against a known SHA-1 value rather than against the implementation.
+	const sessionKey = "0123456789abcdef"
+	const wantSHA1 = "fe5567e8d769550852182cdf69d74bb16dff8e29"
+
+	got := hashSessionKey(sessionKey)
+
+	if len(got) != 40 {
+		t.Fatalf("hashSessionKey() returned %d chars, want 40 (SHA-1 hex); a 64 char digest is SHA-256 and the server will never find the row", len(got))
+	}
+	if got != wantSHA1 {
+		t.Errorf("hashSessionKey() = %q, want %q", got, wantSHA1)
+	}
+}

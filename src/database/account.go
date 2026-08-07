@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha1"
-	"crypto/sha256"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/hex"
@@ -73,6 +72,19 @@ func (acc *Account) IsAdmin() bool {
 	return acc != nil && acc.Type >= accountTypeGameMaster
 }
 
+// hashSessionKey returns the value stored in account_sessions.id for a session
+// key.
+//
+// This must stay SHA-1. The game server looks the session up with
+// transformToSHA1(sessionKey) in account_repository_db.cpp, so any other digest
+// writes a row that is never found: the client receives the character list
+// normally and is then rejected at world login with "Your session has expired",
+// which points at expiry rather than at the hash.
+func hashSessionKey(sessionKey string) string {
+	sum := sha1.Sum([]byte(sessionKey))
+	return hex.EncodeToString(sum[:])
+}
+
 func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, error) {
 	if acc == nil {
 		return "", serviceerrors.LoginService(
@@ -99,7 +111,7 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 	}
 
 	sessionKey := hex.EncodeToString(raw)
-	hash := sha256.Sum256([]byte(sessionKey))
+	hash := hashSessionKey(sessionKey)
 	expires := time.Now().Add(sessionDuration).Unix()
 
 	if ctx == nil {
@@ -112,7 +124,7 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 	if _, err := db.ExecContext(
 		writeCtx,
 		"INSERT INTO `account_sessions` (`id`, `account_id`, `expires`) VALUES (?, ?, ?)",
-		fmt.Sprintf("%x", hash),
+		hash,
 		acc.ID,
 		expires,
 	); err != nil {

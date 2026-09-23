@@ -248,7 +248,8 @@ func Test_buildTemporaryErrorPayload(t *testing.T) {
 }
 
 func Test_hasIncompatibleAuthType(t *testing.T) {
-	assert.False(t, (&Api{}).hasIncompatibleAuthType())
+	assert.True(t, (*Api)(nil).hasIncompatibleAuthType())
+	assert.True(t, (&Api{}).hasIncompatibleAuthType())
 
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.lua")
@@ -339,7 +340,7 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 		{
 			name:       "legacy session key",
 			sessionKey: "user@example.com\npassword123",
-			authType:   "",
+			authType:   "session",
 			assertions: func(t *testing.T, payload loginResponsePayload) {
 				assert.Equal(t, "user@example.com\npassword123", payload.Session.SessionKey)
 			},
@@ -347,7 +348,7 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 		{
 			name:       "random token session key",
 			sessionKey: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
-			authType:   "",
+			authType:   "session",
 			assertions: func(t *testing.T, payload loginResponsePayload) {
 				assert.Equal(t, "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", payload.Session.SessionKey)
 			},
@@ -411,8 +412,15 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 func Test_loginHandlerReturnsNamedErrorWhenGrpcConnectionIsMissing(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.lua")
+	err := os.WriteFile(configPath, []byte("authType = \"session\"\n"), 0o600)
+	require.NoError(t, err)
+	manager, err := configs.NewLuaConfigManager(configPath)
+	require.NoError(t, err)
+
 	router := gin.New()
-	router.POST("/login", (&Api{}).login)
+	router.POST("/login", (&Api{LuaConfigManager: manager}).login)
 
 	requestBody, _ := json.Marshal(models.RequestPayload{
 		Type:     "login",
@@ -427,10 +435,34 @@ func Test_loginHandlerReturnsNamedErrorWhenGrpcConnectionIsMissing(t *testing.T)
 	assert.Equal(t, http.StatusOK, recorder.Code)
 
 	var payload models.LoginErrorPayload
-	err := json.Unmarshal(recorder.Body.Bytes(), &payload)
+	err = json.Unmarshal(recorder.Body.Bytes(), &payload)
 	assert.NoError(t, err)
 	assert.Equal(t, serviceerrors.CodeLoginServiceUnavailable, payload.ErrorCode)
 	assert.Equal(t, "Login service error. Please contact support. Error: LOGIN_SERVICE_UNAVAILABLE (LS-3001).", payload.ErrorMessage)
+}
+
+func Test_loginHandlerRejectsMissingAuthenticationConfiguration(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.POST("/login", (&Api{}).login)
+
+	requestBody, err := json.Marshal(models.RequestPayload{
+		Type:     "login",
+		Email:    "user@example.com",
+		Password: "password123",
+		Token:    "123456",
+	})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(requestBody))
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+
+	var payload models.LoginErrorPayload
+	err = json.Unmarshal(recorder.Body.Bytes(), &payload)
+	require.NoError(t, err)
+	assert.Equal(t, serviceerrors.CodeSessionAuthenticationRequired, payload.ErrorCode)
 }
 
 func Test_loginHandlerRejectsPasswordAuthenticationMode(t *testing.T) {

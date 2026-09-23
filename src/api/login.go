@@ -35,7 +35,7 @@ func (_api *Api) login(c *gin.Context) {
 			writePublicError(c, serviceerrors.LoginService(
 				serviceerrors.CodeSessionAuthenticationRequired,
 				"SESSION_AUTHENTICATION_REQUIRED",
-				fmt.Errorf("game server authType is configured as password"),
+				fmt.Errorf("game server authType is unavailable or not configured as session"),
 			))
 			return
 		}
@@ -82,7 +82,7 @@ func (_api *Api) login(c *gin.Context) {
 
 func (api *Api) hasIncompatibleAuthType() bool {
 	if api == nil || api.LuaConfigManager == nil {
-		return false
+		return true
 	}
 	return api.LuaConfigManager.GetString("authType") != "session"
 }

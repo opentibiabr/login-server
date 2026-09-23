@@ -31,6 +31,14 @@ func (_api *Api) login(c *gin.Context) {
 	case "boostedcreature":
 		database.HandleBoostedCreature(c, _api.DB, &_api.BoostedCreatureID, &_api.BoostedBossID)
 	case "login":
+		if _api.hasIncompatibleAuthType() {
+			writePublicError(c, serviceerrors.LoginService(
+				serviceerrors.CodeSessionAuthenticationRequired,
+				"SESSION_AUTHENTICATION_REQUIRED",
+				fmt.Errorf("game server authType is configured as password"),
+			))
+			return
+		}
 		if _api.GrpcConnection == nil {
 			writePublicError(c, serviceerrors.LoginService(
 				serviceerrors.CodeLoginServiceUnavailable,
@@ -44,7 +52,7 @@ func (_api *Api) login(c *gin.Context) {
 
 		res, err := grpcClient.Login(
 			context.Background(),
-			&login_proto_messages.LoginRequest{Email: payload.Email, Password: payload.Password},
+			&login_proto_messages.LoginRequest{Email: payload.Email, Password: payload.Password, Token: payload.Token},
 		)
 
 		if err != nil {
@@ -62,7 +70,6 @@ func (_api *Api) login(c *gin.Context) {
 		}
 
 		response := buildPayloadFromMessage(res, payload)
-		response.Session.SessionKey = buildSessionKey(response.Session.SessionKey, _api.authTypeIsPassword(), payload.Email, payload.Password)
 		c.JSON(http.StatusOK, response)
 	default:
 		writePublicError(c, serviceerrors.LoginService(
@@ -73,19 +80,11 @@ func (_api *Api) login(c *gin.Context) {
 	}
 }
 
-func (api *Api) authTypeIsPassword() bool {
+func (api *Api) hasIncompatibleAuthType() bool {
 	if api == nil || api.LuaConfigManager == nil {
 		return false
 	}
-	return api.LuaConfigManager.GetString("authType") == "password"
-}
-
-func buildSessionKey(defaultSessionKey string, authTypeIsPassword bool, email, password string) string {
-	if !authTypeIsPassword {
-		return defaultSessionKey
-	}
-
-	return fmt.Sprintf("%s\n%s", email, password)
+	return api.LuaConfigManager.GetString("authType") != "session"
 }
 
 func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request models.RequestPayload) models.ResponsePayload {

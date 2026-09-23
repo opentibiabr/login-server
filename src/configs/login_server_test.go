@@ -147,6 +147,12 @@ func TestGetRateLimiterConfigs(t *testing.T) {
 	}
 }
 
+func TestGetAuthenticatorConfigs(t *testing.T) {
+	t.Setenv(EnvAuthenticatorEncryptionKey, "encoded-key")
+
+	assert.Equal(t, AuthenticatorConfigs{EncryptionKey: "encoded-key"}, getAuthenticatorConfigs())
+}
+
 func TestGetGrpcLoginConfigs(t *testing.T) {
 	tests := []struct {
 		name string

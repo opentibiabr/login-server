@@ -12,6 +12,7 @@ func TestRequestPayloadAcceptsLoginMetadata(t *testing.T) {
 		"type": "login",
 		"email": "player@example.invalid",
 		"password": "secret",
+		"token": "123456",
 		"stayloggedin": true,
 		"clientversion": "15.20.99c34c",
 		"clienttype": 2,
@@ -26,6 +27,7 @@ func TestRequestPayloadAcceptsLoginMetadata(t *testing.T) {
 	assert.Equal(t, uint32(2), payload.ClientType)
 	assert.Equal(t, "assets-sha", payload.AssetVersion)
 	assert.Equal(t, "device-cookie", payload.DeviceCookie)
+	assert.Equal(t, "123456", payload.Token)
 }
 
 func TestRequestPayloadAcceptsNewsMetadata(t *testing.T) {

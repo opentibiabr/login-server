@@ -28,6 +28,10 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return buildLoginErrorResponse(err, false), nil
 	}
 
+	if err := acc.VerifyAuthenticator(ctx, ls.DB, in.Token, ls.AuthenticatorEncryptionKey); err != nil {
+		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
+	}
+
 	if err := configs.ValidateGameServerName(configs.GetGameServerConfigs()); err != nil {
 		logger.Error(err)
 		configErr := toConfigurationError(err)

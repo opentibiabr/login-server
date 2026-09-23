@@ -11,6 +11,7 @@ message LoginRequest {
     string email = 1;
     string password = 2;
     string type = 3;
+    string token = 4;
 }
 
 message LoginResponse {

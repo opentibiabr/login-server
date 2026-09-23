@@ -50,6 +50,7 @@ You can also download our docker image and apply the environment variables to yo
 |`LOGIN_GRPC_PORT`    | `login grpc port`                    |
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
+|`AUTHENTICATOR_ENCRYPTION_KEY`|`base64-encoded 32-byte AES key shared with the account website; required at login-server startup`|
 |`SERVER_IP`          | `game server IP address`             |
 |`SERVER_LOCATION`    | `game server location`               |
 |`SERVER_NAME`        | `game server name; the official client sends this exact value plus newline before the first world-login packet` |
@@ -61,6 +62,32 @@ You can also download our docker image and apply the environment variables to yo
 
 **Build**  
 `RUN go build -o TARGET_NAME ./src/`
+
+## Two-factor authentication
+
+The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher must enroll before they can log in; enrollment remains optional for other accounts.
+
+The account website owns enrollment and stores the secret only after the player confirms the first code. The website and login server must use the same `AUTHENTICATOR_ENCRYPTION_KEY`. Generate it once with `openssl rand -base64 32`, store it outside the database, and do not rotate it without re-encrypting enrolled secrets.
+
+The game server must run with `authType = "session"`. The login API refuses an explicit password-authentication configuration because returning `email\npassword` would let direct game-server logins bypass the authenticator.
+
+The required table is:
+
+```sql
+CREATE TABLE `account_authenticators` (
+  `account_id` int unsigned NOT NULL,
+  `secret_encrypted` varchar(512) NOT NULL,
+  `last_used_step` bigint unsigned DEFAULT NULL,
+  `failed_attempts` smallint unsigned NOT NULL DEFAULT 0,
+  `blocked_until` bigint unsigned NOT NULL DEFAULT 0,
+  `enabled_at` bigint unsigned NOT NULL,
+  PRIMARY KEY (`account_id`),
+  CONSTRAINT `account_authenticators_account_fk`
+    FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+Secrets use the envelope `v1:<base64(nonce || ciphertext || tag)>`, with AES-256-GCM, a 12-byte nonce, a 16-byte tag, and associated data `otbr-login-authenticator:v1:<account_id>`. Tokens use SHA-1, six digits, a 30-second period, and a one-step clock window. Accepted time steps are recorded atomically so the same code cannot be reused. Invalid attempts are limited per account in addition to the HTTP per-IP limiter.
 
 ## Docker
 `docker pull opentibiabr/login-server:latest`<br><br>

@@ -14,11 +14,18 @@ const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
 
 const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
 const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
+const EnvAuthenticatorEncryptionKey = "AUTHENTICATOR_ENCRYPTION_KEY"
 
 type LoginServerConfigs struct {
-	Http        HttpLoginConfigs
-	Grpc        GrpcLoginConfigs
-	RateLimiter RateLimiter
+	Http          HttpLoginConfigs
+	Grpc          GrpcLoginConfigs
+	RateLimiter   RateLimiter
+	Authenticator AuthenticatorConfigs
+	Config
+}
+
+type AuthenticatorConfigs struct {
+	EncryptionKey string
 	Config
 }
 
@@ -50,10 +57,15 @@ func (loginServerConfigs *LoginServerConfigs) Format() string {
 }
 func GetLoginServerConfigs() LoginServerConfigs {
 	return LoginServerConfigs{
-		Http:        getHttpLoginConfigs(),
-		Grpc:        getGrpcLoginConfigs(),
-		RateLimiter: GetRateLimiterConfigs(),
+		Http:          getHttpLoginConfigs(),
+		Grpc:          getGrpcLoginConfigs(),
+		RateLimiter:   GetRateLimiterConfigs(),
+		Authenticator: getAuthenticatorConfigs(),
 	}
+}
+
+func getAuthenticatorConfigs() AuthenticatorConfigs {
+	return AuthenticatorConfigs{EncryptionKey: GetEnvStr(EnvAuthenticatorEncryptionKey)}
 }
 
 func (httpLoginConfigs *HttpLoginConfigs) Format() string {

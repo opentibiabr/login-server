@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
 	"regexp"
@@ -45,6 +46,36 @@ func TestVerifyAuthenticatorRequiresTokenForEnrolledAccount(t *testing.T) {
 	err := (&Account{ID: 42, Type: 1}).VerifyAuthenticator(context.Background(), db, "", "")
 
 	assertPublicError(t, err, serviceerrors.CodeAuthenticatorRequired, "AUTHENTICATOR_REQUIRED")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestVerifyLoginSecondFactorAcceptsAndRotatesTrustedDevice(t *testing.T) {
+	db, mock := newAuthenticatorMock(t)
+	now := time.Unix(10_000, 0)
+	previousNow := trustedDeviceNow
+	trustedDeviceNow = func() time.Time { return now }
+	t.Cleanup(func() { trustedDeviceNow = previousNow })
+
+	raw := []byte("0123456789abcdef0123456789abcdef")
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	tokenHash := sha256.Sum256(raw)
+	expiresAt := uint64(now.Add(24 * time.Hour).Unix())
+	mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).
+		WillReturnRows(authenticatorRow("v1:unused", nil, 0))
+	mock.ExpectQuery("SELECT expires_at FROM account_trusted_devices").
+		WithArgs(uint32(42), tokenHash[:], now.Unix()).
+		WillReturnRows(sqlmock.NewRows([]string{"expires_at"}).AddRow(expiresAt))
+	mock.ExpectExec("UPDATE account_trusted_devices").
+		WithArgs(sqlmock.AnyArg(), now.Unix(), uint32(42), tokenHash[:], now.Unix()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	verification, err := (&Account{ID: 42, Type: 1}).VerifyLoginSecondFactor(
+		context.Background(), db, "", token, "")
+
+	require.NoError(t, err)
+	assert.False(t, verification.VerifiedWithAuthenticator)
+	assert.NotEmpty(t, verification.TrustedDeviceToken)
+	assert.Equal(t, expiresAt, verification.TrustedDeviceExpiresAt)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

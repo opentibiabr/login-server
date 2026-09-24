@@ -27,6 +27,30 @@ import (
 var defaultString = "default"
 var defaultNumber = uint32(10)
 
+func TestIsSecureLoginRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	for _, test := range []struct {
+		name      string
+		url       string
+		forwarded string
+		secure    bool
+	}{
+		{name: "plain HTTP", url: "http://login.example/login", secure: false},
+		{name: "direct HTTPS", url: "https://login.example/login", secure: true},
+		{name: "TLS proxy", url: "http://login.example/login", forwarded: "https", secure: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			context, _ := gin.CreateTestContext(httptest.NewRecorder())
+			context.Request = httptest.NewRequest(http.MethodPost, test.url, nil)
+			if test.forwarded != "" {
+				context.Request.Header.Set("X-Forwarded-Proto", test.forwarded)
+			}
+			assert.Equal(t, test.secure, isSecureLoginRequest(context))
+		})
+	}
+}
+
 func Test_buildErrorPayloadFromMessage(t *testing.T) {
 	type args struct {
 		msg *login_proto_messages.LoginResponse
@@ -81,6 +105,8 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 		Email:        "player@example.invalid",
 	}
 	msg := &login_proto_messages.LoginResponse{
+		TrustedDeviceToken:     "rotated-trusted-device",
+		TrustedDeviceExpiresAt: 123456,
 		Session: &login_proto_messages.Session{
 			IsPremium:    true,
 			PremiumUntil: 20,
@@ -120,8 +146,10 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 	}
 
 	want := models.ResponsePayload{
-		DeviceCookie: "device-cookie",
-		LoginEmail:   "player@example.invalid",
+		DeviceCookie:           "device-cookie",
+		LoginEmail:             "player@example.invalid",
+		TrustedDeviceToken:     "rotated-trusted-device",
+		TrustedDeviceExpiresAt: 123456,
 		PlayData: models.PlayData{
 			Characters: []models.CharacterPayload{{
 				WorldID: defaultNumber,
@@ -180,7 +208,9 @@ func Test_buildPayloadFromMessage(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, json.Unmarshal(bytes, &jsonPayload))
 
-	assert.ElementsMatch(t, []string{"devicecookie", "loginemail", "playdata", "session"}, mapKeys(jsonPayload))
+	assert.ElementsMatch(t, []string{
+		"devicecookie", "loginemail", "playdata", "session", "trusteddevicetoken", "trusteddeviceexpiresat",
+	}, mapKeys(jsonPayload))
 
 	session := jsonPayload["session"].(map[string]interface{})
 	assert.ElementsMatch(t, []string{
@@ -383,16 +413,20 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 			router.POST("/login.php", api.login)
 
 			requestBody, _ := json.Marshal(models.RequestPayload{
-				Type:         "login",
-				Email:        "user@example.com",
-				Password:     "password123",
-				Token:        "123456",
-				DeviceCookie: "test-device",
+				Type:               "login",
+				Email:              "user@example.com",
+				Password:           "password123",
+				Token:              "123456",
+				DeviceCookie:       "test-device",
+				TrustedDeviceToken: "trusted-device",
+				TrustDevice:        true,
+				DeviceName:         "OTClient (Windows)",
 			})
 
 			for _, endpoint := range endpoints {
 				t.Run(endpoint, func(t *testing.T) {
 					request := httptest.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(requestBody))
+					request.Header.Set("X-Forwarded-Proto", "https")
 
 					recorder := httptest.NewRecorder()
 					router.ServeHTTP(recorder, request)
@@ -402,11 +436,55 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 					err := json.Unmarshal(recorder.Body.Bytes(), &payload)
 					assert.NoError(t, err)
 					assert.Equal(t, "123456", loginService.request.GetToken())
+					assert.Equal(t, "trusted-device", loginService.request.GetTrustedDeviceToken())
+					assert.True(t, loginService.request.GetTrustDevice())
+					assert.Equal(t, "OTClient (Windows)", loginService.request.GetDeviceName())
 					tt.assertions(t, payload)
 				})
 			}
 		})
 	}
+}
+
+func TestLoginHandlerDropsTrustedDeviceCredentialsOverPlainHTTP(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	connection, loginService := newInMemoryLoginClient(t, &login_proto_messages.LoginResponse{
+		Session:                &login_proto_messages.Session{SessionKey: "opaque-session"},
+		PlayData:               &login_proto_messages.PlayData{},
+		TrustedDeviceToken:     "must-not-cross-plain-http-response",
+		TrustedDeviceExpiresAt: 123456,
+	})
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.lua")
+	require.NoError(t, os.WriteFile(configPath, []byte("authType = \"session\"\n"), 0o600))
+	manager, err := configs.NewLuaConfigManager(configPath)
+	require.NoError(t, err)
+
+	router := gin.New()
+	router.POST("/login", (&Api{GrpcConnection: connection, LuaConfigManager: manager}).login)
+	requestBody, err := json.Marshal(models.RequestPayload{
+		Type:               "login",
+		Email:              "user@example.com",
+		Password:           "password123",
+		Token:              "123456",
+		TrustedDeviceToken: "must-not-cross-plain-http",
+		TrustDevice:        true,
+		DeviceName:         "OTClient (Windows)",
+	})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "http://login.example/login", bytes.NewBuffer(requestBody))
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Empty(t, loginService.request.GetTrustedDeviceToken())
+	assert.False(t, loginService.request.GetTrustDevice())
+	assert.Empty(t, loginService.request.GetDeviceName())
+	var response map[string]interface{}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	assert.NotContains(t, response, "trusteddevicetoken")
+	assert.NotContains(t, response, "trusteddeviceexpiresat")
 }
 
 func Test_loginHandlerReturnsNamedErrorWhenGrpcConnectionIsMissing(t *testing.T) {

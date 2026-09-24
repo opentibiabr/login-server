@@ -25,8 +25,20 @@ type accountAuthenticator struct {
 var authenticatorNow = time.Now
 
 func (acc *Account) VerifyAuthenticator(ctx context.Context, db *sql.DB, token, encodedKey string) error {
+	_, err := acc.VerifyLoginSecondFactor(ctx, db, token, "", encodedKey)
+	return err
+}
+
+type SecondFactorVerification struct {
+	VerifiedWithAuthenticator bool
+	TrustedDeviceToken        string
+	TrustedDeviceExpiresAt    uint64
+}
+
+func (acc *Account) VerifyLoginSecondFactor(ctx context.Context, db *sql.DB, token, trustedDeviceToken, encodedKey string) (SecondFactorVerification, error) {
+	verification := SecondFactorVerification{}
 	if acc == nil || db == nil {
-		return serviceerrors.LoginService(
+		return verification, serviceerrors.LoginService(
 			serviceerrors.CodeAuthenticatorDataUnavailable,
 			"AUTHENTICATOR_DATA_UNAVAILABLE",
 			errors.New("account or database connection is nil"),
@@ -39,22 +51,31 @@ func (acc *Account) VerifyAuthenticator(ctx context.Context, db *sql.DB, token, 
 	entry, err := loadAccountAuthenticator(ctx, db, acc.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		if acc.IsAdmin() {
-			return serviceerrors.StaffAuthenticatorRequired()
+			return verification, serviceerrors.StaffAuthenticatorRequired()
 		}
-		return nil
+		return verification, nil
 	}
 	if err != nil {
-		return classifyAuthenticatorDataError(err)
+		return verification, classifyAuthenticatorDataError(err)
+	}
+
+	if trustedDeviceToken != "" {
+		replacement, expiresAt, valid, trustedErr := acc.RotateTrustedDevice(ctx, db, trustedDeviceToken)
+		if trustedErr == nil && valid {
+			verification.TrustedDeviceToken = replacement
+			verification.TrustedDeviceExpiresAt = expiresAt
+			return verification, nil
+		}
 	}
 
 	now := authenticatorNow().Unix()
 	if entry.blockedUntil > now || token == "" {
-		return serviceerrors.AuthenticatorRequired()
+		return verification, serviceerrors.AuthenticatorRequired()
 	}
 
 	secret, err := authenticator.DecryptSecret(entry.secretEnvelope, encodedKey, acc.ID)
 	if err != nil {
-		return serviceerrors.LoginService(
+		return verification, serviceerrors.LoginService(
 			serviceerrors.CodeAuthenticatorConfigurationInvalid,
 			"AUTHENTICATOR_CONFIGURATION_INVALID",
 			err,
@@ -64,12 +85,12 @@ func (acc *Account) VerifyAuthenticator(ctx context.Context, db *sql.DB, token, 
 	matchedStep, ok := authenticator.MatchingStep(secret, token, now)
 	if !ok {
 		if err := recordAuthenticatorFailure(ctx, db, acc.ID, now); err != nil {
-			return classifyAuthenticatorDataError(err)
+			return verification, classifyAuthenticatorDataError(err)
 		}
-		return serviceerrors.AuthenticatorRequired()
+		return verification, serviceerrors.AuthenticatorRequired()
 	}
 	if entry.lastUsedStep.Valid && matchedStep <= entry.lastUsedStep.Int64 {
-		return serviceerrors.AuthenticatorRequired()
+		return verification, serviceerrors.AuthenticatorRequired()
 	}
 
 	result, err := db.ExecContext(ctx, `UPDATE account_authenticators
@@ -77,17 +98,18 @@ func (acc *Account) VerifyAuthenticator(ctx context.Context, db *sql.DB, token, 
 		WHERE account_id = ? AND blocked_until <= ? AND (last_used_step IS NULL OR last_used_step < ?)`,
 		matchedStep, acc.ID, now, matchedStep)
 	if err != nil {
-		return classifyAuthenticatorDataError(err)
+		return verification, classifyAuthenticatorDataError(err)
 	}
 	affected, err := result.RowsAffected()
 	if err != nil {
-		return classifyAuthenticatorDataError(err)
+		return verification, classifyAuthenticatorDataError(err)
 	}
 	if affected != 1 {
-		return serviceerrors.AuthenticatorRequired()
+		return verification, serviceerrors.AuthenticatorRequired()
 	}
 
-	return nil
+	verification.VerifiedWithAuthenticator = true
+	return verification, nil
 }
 
 func loadAccountAuthenticator(ctx context.Context, db *sql.DB, accountID uint32) (*accountAuthenticator, error) {

@@ -28,10 +28,6 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return buildLoginErrorResponse(err, false), nil
 	}
 
-	if err := acc.VerifyAuthenticator(ctx, ls.DB, in.Token, ls.AuthenticatorEncryptionKey); err != nil {
-		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
-	}
-
 	if err := configs.ValidateGameServerName(configs.GetGameServerConfigs()); err != nil {
 		logger.Error(err)
 		configErr := toConfigurationError(err)
@@ -41,6 +37,20 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	characters, err := database.LoadPlayers(ls.DB, acc)
 	if err != nil {
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
+	}
+
+	verification, err := acc.VerifyLoginSecondFactor(ctx, ls.DB, in.Token, in.TrustedDeviceToken, ls.AuthenticatorEncryptionKey)
+	if err != nil {
+		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
+	}
+	if in.TrustDevice && verification.VerifiedWithAuthenticator {
+		trustedToken, expiresAt, issueErr := acc.IssueTrustedDevice(ctx, ls.DB, in.DeviceName)
+		if issueErr != nil {
+			logger.Error(fmt.Errorf("trusted device issue failed: %w", issueErr))
+		} else {
+			verification.TrustedDeviceToken = trustedToken
+			verification.TrustedDeviceExpiresAt = expiresAt
+		}
 	}
 
 	sessionKey, err := acc.CreateSession(ctx, ls.DB)
@@ -53,7 +63,9 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 			Characters: characters,
 			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
 		},
-		Session: acc.GetGrpcSession(sessionKey),
+		Session:                acc.GetGrpcSession(sessionKey),
+		TrustedDeviceToken:     verification.TrustedDeviceToken,
+		TrustedDeviceExpiresAt: verification.TrustedDeviceExpiresAt,
 	}
 
 	logger.WithFields(logrus.Fields{

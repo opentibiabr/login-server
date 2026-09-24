@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/api/models"
@@ -50,9 +51,26 @@ func (_api *Api) login(c *gin.Context) {
 
 		grpcClient := login_proto_messages.NewLoginServiceClient(_api.GrpcConnection)
 
+		trustedDeviceToken := ""
+		trustDevice := false
+		deviceName := ""
+		secureLoginRequest := isSecureLoginRequest(c)
+		if secureLoginRequest {
+			trustedDeviceToken = payload.TrustedDeviceToken
+			trustDevice = payload.TrustDevice
+			deviceName = payload.DeviceName
+		}
+
 		res, err := grpcClient.Login(
 			context.Background(),
-			&login_proto_messages.LoginRequest{Email: payload.Email, Password: payload.Password, Token: payload.Token},
+			&login_proto_messages.LoginRequest{
+				Email:              payload.Email,
+				Password:           payload.Password,
+				Token:              payload.Token,
+				TrustedDeviceToken: trustedDeviceToken,
+				TrustDevice:        trustDevice,
+				DeviceName:         deviceName,
+			},
 		)
 
 		if err != nil {
@@ -70,6 +88,10 @@ func (_api *Api) login(c *gin.Context) {
 		}
 
 		response := buildPayloadFromMessage(res, payload)
+		if !secureLoginRequest {
+			response.TrustedDeviceToken = ""
+			response.TrustedDeviceExpiresAt = 0
+		}
 		c.JSON(http.StatusOK, response)
 	default:
 		writePublicError(c, serviceerrors.LoginService(
@@ -87,6 +109,17 @@ func (api *Api) hasIncompatibleAuthType() bool {
 	return api.LuaConfigManager.GetString("authType") != "session"
 }
 
+func isSecureLoginRequest(c *gin.Context) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+	if c.Request.TLS != nil {
+		return true
+	}
+	forwardedProto := strings.TrimSpace(strings.Split(c.GetHeader("X-Forwarded-Proto"), ",")[0])
+	return strings.EqualFold(forwardedProto, "https")
+}
+
 func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request models.RequestPayload) models.ResponsePayload {
 	return models.ResponsePayload{
 		DeviceCookie: request.DeviceCookie,
@@ -95,7 +128,9 @@ func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request mo
 			Worlds:     models.LoadWorldsFromMessage(msg.PlayData.Worlds),
 			Characters: models.LoadCharactersFromMessage(msg.PlayData.Characters),
 		},
-		Session: models.LoadSessionFromMessage(msg.GetSession()),
+		Session:                models.LoadSessionFromMessage(msg.GetSession()),
+		TrustedDeviceToken:     msg.GetTrustedDeviceToken(),
+		TrustedDeviceExpiresAt: msg.GetTrustedDeviceExpiresAt(),
 	}
 }
 

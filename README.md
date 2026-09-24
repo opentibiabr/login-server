@@ -89,6 +89,10 @@ CREATE TABLE `account_authenticators` (
 
 Secrets use the envelope `v1:<base64(nonce || ciphertext || tag)>`, with AES-256-GCM, a 12-byte nonce, a 16-byte tag, and associated data `otbr-login-authenticator:v1:<account_id>`. Tokens use SHA-1, six digits, a 30-second period, and a one-step clock window. Accepted time steps are recorded atomically so the same code cannot be reused. Invalid attempts are limited per account in addition to the HTTP per-IP limiter.
 
+HTTPS clients may send `trustdevice: true` with a successful TOTP challenge. The response then includes an opaque `trusteddevicetoken` that can replace TOTP for that account for 30 days; the account password is still required on every login. The credential is rotated after every successful use, only its SHA-256 hash is stored, and at most ten active devices are kept per account. The API ignores enrollment and trusted-device credentials unless the request uses TLS directly or carries the reverse proxy's `X-Forwarded-Proto: https` header. Clients must protect the token with operating-system credential protection and must never send it over plain HTTP.
+
+Changing or recovering the account password, enabling, replacing, or disabling the authenticator, and explicit device removal must delete the affected rows from `account_trusted_devices`. The account website exposes individual and all-device revocation. Expiry is absolute and is not extended by use.
+
 ## Docker
 `docker pull opentibiabr/login-server:latest`<br><br>
 [![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)

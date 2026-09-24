@@ -48,8 +48,10 @@ You can also download our docker image and apply the environment variables to yo
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
 |`LOGIN_GRPC_PORT`    | `login grpc port`                    |
+|`LOGIN_TRUSTED_PROXIES`|`comma-separated IP/CIDR allowlist of reverse proxies permitted to supply forwarding headers; empty by default`|
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
+|`AUTHENTICATOR_ENCRYPTION_KEY`|`base64-encoded 32-byte AES key shared with the account website; required at login-server startup`|
 |`SERVER_IP`          | `game server IP address`             |
 |`SERVER_LOCATION`    | `game server location`               |
 |`SERVER_NAME`        | `game server name; the official client sends this exact value plus newline before the first world-login packet` |
@@ -61,6 +63,40 @@ You can also download our docker image and apply the environment variables to yo
 
 **Build**  
 `RUN go build -o TARGET_NAME ./src/`
+
+## Two-factor authentication
+
+The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher must enroll before they can log in; enrollment remains optional for other accounts.
+
+The account website owns enrollment and stores the secret only after the player confirms the first code. The website and login server must use the same `AUTHENTICATOR_ENCRYPTION_KEY`. Generate it once with `openssl rand -base64 32`, store it outside the database, and do not rotate it without re-encrypting enrolled secrets.
+
+The game server must run with `authType = "session"`. The login API refuses an explicit password-authentication configuration because returning `email\npassword` would let direct game-server logins bypass the authenticator.
+
+The required table is:
+
+```sql
+CREATE TABLE `account_authenticators` (
+  `account_id` int unsigned NOT NULL,
+  `secret_encrypted` varchar(512) NOT NULL,
+  `last_used_step` bigint unsigned DEFAULT NULL,
+  `failed_attempts` smallint unsigned NOT NULL DEFAULT 0,
+  `blocked_until` bigint unsigned NOT NULL DEFAULT 0,
+  `enabled_at` bigint unsigned NOT NULL,
+  PRIMARY KEY (`account_id`),
+  CONSTRAINT `account_authenticators_account_fk`
+    FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+Secrets use the envelope `v1:<base64(nonce || ciphertext || tag)>`, with AES-256-GCM, a 12-byte nonce, a 16-byte tag, and associated data `otbr-login-authenticator:v1:<account_id>`. Tokens use SHA-1, six digits, a 30-second period, and a one-step clock window. Accepted time steps are recorded atomically so the same code cannot be reused. Invalid attempts are limited per account in addition to the HTTP per-IP limiter.
+
+HTTPS clients may send `trustdevice: true` with a successful TOTP challenge. The response then includes an opaque `trusteddevicetoken` that can replace TOTP for that account for 30 days; the account password is still required on every login. The credential is rotated after every successful use, only its SHA-256 hash is stored, and at most ten active devices are kept per account. The API ignores enrollment and trusted-device credentials unless the request uses TLS directly or carries `X-Forwarded-Proto: https` from a peer listed in `LOGIN_TRUSTED_PROXIES`. Clients must protect the token with operating-system credential protection and must never send it over plain HTTP.
+
+When TLS terminates at an upstream proxy such as Cloudflare, production deployments must also use authenticated TLS from that proxy to the login server and validate the origin certificate; use mutual TLS when the proxy supports it. `X-Forwarded-Proto` and an IP allowlist authenticate neither the transport nor its contents and do not protect the account password or trusted-device token on that hop. Plain HTTP is acceptable only on same-host loopback or a private network that is isolated from untrusted workloads and packet observers, with that exception recorded in the deployment threat model.
+
+Set `LOGIN_TRUSTED_PROXIES` to the immediate reverse proxy's IP addresses or CIDR ranges. Configure every listed proxy to remove any client-supplied `X-Forwarded-Proto` and write exactly one authenticated upstream value; the login server rejects repeated or comma-separated values. Do not replace that value with Nginx's local `$scheme`; preserve it only for authenticated and allowlisted proxy addresses, and fall back to `$scheme` for direct origin traffic. When Nginx's RealIP module rewrites `$remote_addr`, classify the proxy peer with `$realip_remote_addr`; otherwise the allowlist is evaluated against the visitor address and every forwarded scheme is rejected. Never trust a client-supplied forwarding header from an unrestricted source. Cloudflare publishes both its [request-header contract](https://developers.cloudflare.com/fundamentals/reference/http-headers/) and its current [origin-facing IP ranges](https://developers.cloudflare.com/fundamentals/concepts/cloudflare-ip-addresses/).
+
+Changing or recovering the account password, enabling, replacing, or disabling the authenticator, and explicit device removal must delete the affected rows from `account_trusted_devices`. The account website exposes individual and all-device revocation. Expiry is absolute and is not extended by use.
 
 ## Docker
 `docker pull opentibiabr/login-server:latest`<br><br>

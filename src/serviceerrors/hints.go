@@ -20,6 +20,12 @@ func AdminHint(name string) string {
 		return "Create or migrate the account_sessions table with id, account_id and expires columns, then try logging in again."
 	case "SESSION_CREATE_FAILED":
 		return "Check account_sessions permissions/schema and MySQL write access for the login-server database user."
+	case "AUTHENTICATOR_DATA_UNAVAILABLE":
+		return "Create or migrate the account_authenticators table and verify the login-server database user can read and update it."
+	case "AUTHENTICATOR_CONFIGURATION_INVALID":
+		return "Set AUTHENTICATOR_ENCRYPTION_KEY to the same base64-encoded 32-byte key used by the account website."
+	case "SESSION_AUTHENTICATION_REQUIRED":
+		return "Set authType = \"session\" in the game server config so password logins cannot bypass two-factor authentication."
 	case "LOGIN_SERVICE_UNAVAILABLE":
 		return "Check LOGIN_GRPC_PORT/LOGIN_IP and confirm the login-server gRPC process is running."
 	case "EVENT_SCHEDULE_UNAVAILABLE":

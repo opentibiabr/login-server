@@ -31,6 +31,7 @@ type Api struct {
 	ServerPath        string
 	CorePath          string
 	LuaConfigManager  *configs.LuaConfigManager
+	trustedProxies    trustedProxySet
 }
 
 func Initialize(gConfigs configs.GlobalConfigs) *Api {
@@ -49,6 +50,11 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	gin.SetMode(gin.ReleaseMode)
 
 	_api.Router = gin.New()
+	_api.trustedProxies, err = parseTrustedProxySet(gConfigs.LoginServerConfigs.Http.TrustedProxies)
+	if err != nil {
+		logger.Error(fmt.Errorf("invalid %s configuration: %v", configs.EnvLoginTrustedProxiesKey, err))
+		_api.trustedProxies = nil
+	}
 	_api.Router.Use(cors.Default())
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())

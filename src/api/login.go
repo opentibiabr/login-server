@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/api/models"
@@ -31,6 +32,14 @@ func (_api *Api) login(c *gin.Context) {
 	case "boostedcreature":
 		database.HandleBoostedCreature(c, _api.DB, &_api.BoostedCreatureID, &_api.BoostedBossID)
 	case "login":
+		if _api.hasIncompatibleAuthType() {
+			writePublicError(c, serviceerrors.LoginService(
+				serviceerrors.CodeSessionAuthenticationRequired,
+				"SESSION_AUTHENTICATION_REQUIRED",
+				fmt.Errorf("game server authType is unavailable or not configured as session"),
+			))
+			return
+		}
 		if _api.GrpcConnection == nil {
 			writePublicError(c, serviceerrors.LoginService(
 				serviceerrors.CodeLoginServiceUnavailable,
@@ -42,9 +51,26 @@ func (_api *Api) login(c *gin.Context) {
 
 		grpcClient := login_proto_messages.NewLoginServiceClient(_api.GrpcConnection)
 
+		trustedDeviceToken := ""
+		trustDevice := false
+		deviceName := ""
+		secureLoginRequest := _api.isSecureLoginRequest(c)
+		if secureLoginRequest {
+			trustedDeviceToken = payload.TrustedDeviceToken
+			trustDevice = payload.TrustDevice
+			deviceName = payload.DeviceName
+		}
+
 		res, err := grpcClient.Login(
 			context.Background(),
-			&login_proto_messages.LoginRequest{Email: payload.Email, Password: payload.Password},
+			&login_proto_messages.LoginRequest{
+				Email:              payload.Email,
+				Password:           payload.Password,
+				Token:              payload.Token,
+				TrustedDeviceToken: trustedDeviceToken,
+				TrustDevice:        trustDevice,
+				DeviceName:         deviceName,
+			},
 		)
 
 		if err != nil {
@@ -62,7 +88,10 @@ func (_api *Api) login(c *gin.Context) {
 		}
 
 		response := buildPayloadFromMessage(res, payload)
-		response.Session.SessionKey = buildSessionKey(response.Session.SessionKey, _api.authTypeIsPassword(), payload.Email, payload.Password)
+		if !secureLoginRequest {
+			response.TrustedDeviceToken = ""
+			response.TrustedDeviceExpiresAt = 0
+		}
 		c.JSON(http.StatusOK, response)
 	default:
 		writePublicError(c, serviceerrors.LoginService(
@@ -73,19 +102,29 @@ func (_api *Api) login(c *gin.Context) {
 	}
 }
 
-func (api *Api) authTypeIsPassword() bool {
+func (api *Api) hasIncompatibleAuthType() bool {
 	if api == nil || api.LuaConfigManager == nil {
-		return false
+		return true
 	}
-	return api.LuaConfigManager.GetString("authType") == "password"
+	return api.LuaConfigManager.GetString("authType") != "session"
 }
 
-func buildSessionKey(defaultSessionKey string, authTypeIsPassword bool, email, password string) string {
-	if !authTypeIsPassword {
-		return defaultSessionKey
+func (api *Api) isSecureLoginRequest(c *gin.Context) bool {
+	if c == nil || c.Request == nil {
+		return false
 	}
-
-	return fmt.Sprintf("%s\n%s", email, password)
+	if c.Request.TLS != nil {
+		return true
+	}
+	if api == nil || !api.trustedProxies.containsRemoteAddress(c.Request.RemoteAddr) {
+		return false
+	}
+	forwardedValues := c.Request.Header.Values("X-Forwarded-Proto")
+	if len(forwardedValues) != 1 || strings.Contains(forwardedValues[0], ",") {
+		return false
+	}
+	forwardedProto := strings.TrimSpace(forwardedValues[0])
+	return strings.EqualFold(forwardedProto, "https")
 }
 
 func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request models.RequestPayload) models.ResponsePayload {
@@ -96,7 +135,9 @@ func buildPayloadFromMessage(msg *login_proto_messages.LoginResponse, request mo
 			Worlds:     models.LoadWorldsFromMessage(msg.PlayData.Worlds),
 			Characters: models.LoadCharactersFromMessage(msg.PlayData.Characters),
 		},
-		Session: models.LoadSessionFromMessage(msg.GetSession()),
+		Session:                models.LoadSessionFromMessage(msg.GetSession()),
+		TrustedDeviceToken:     msg.GetTrustedDeviceToken(),
+		TrustedDeviceExpiresAt: msg.GetTrustedDeviceExpiresAt(),
 	}
 }
 

@@ -11,12 +11,18 @@ message LoginRequest {
     string email = 1;
     string password = 2;
     string type = 3;
+    string token = 4;
+    string trusted_device_token = 5;
+    bool trust_device = 6;
+    string device_name = 7;
 }
 
 message LoginResponse {
     PlayData play_data = 1;
     Session session = 2;
     Error error = 3;
+    string trusted_device_token = 4;
+    uint64 trusted_device_expires_at = 5;
 }
 
 message PlayData {

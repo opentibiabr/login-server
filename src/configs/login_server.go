@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
@@ -11,6 +12,7 @@ import (
 const EnvLoginIpKey = "LOGIN_IP"
 const EnvLoginHttpPortKey = "LOGIN_HTTP_PORT"
 const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
+const EnvLoginTrustedProxiesKey = "LOGIN_TRUSTED_PROXIES"
 
 const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
 const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
@@ -30,8 +32,9 @@ type AuthenticatorConfigs struct {
 }
 
 type HttpLoginConfigs struct {
-	Ip   string
-	Port int
+	Ip             string
+	Port           int
+	TrustedProxies []string
 	Config
 }
 
@@ -77,9 +80,26 @@ func (httpLoginConfigs *HttpLoginConfigs) Format() string {
 }
 func getHttpLoginConfigs() HttpLoginConfigs {
 	return HttpLoginConfigs{
-		Ip:   GetEnvStr(EnvLoginIpKey, ""),
-		Port: GetEnvInt(EnvLoginHttpPortKey, 80),
+		Ip:             GetEnvStr(EnvLoginIpKey, ""),
+		Port:           GetEnvInt(EnvLoginHttpPortKey, 80),
+		TrustedProxies: getTrustedProxies(),
 	}
+}
+
+func getTrustedProxies() []string {
+	value := strings.TrimSpace(GetEnvStr(EnvLoginTrustedProxiesKey, ""))
+	if value == "" {
+		return nil
+	}
+
+	entries := strings.Split(value, ",")
+	proxies := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if proxy := strings.TrimSpace(entry); proxy != "" {
+			proxies = append(proxies, proxy)
+		}
+	}
+	return proxies
 }
 
 func (grpcLoginConfigs *GrpcLoginConfigs) Format() string {

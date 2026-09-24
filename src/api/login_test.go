@@ -31,22 +31,29 @@ func TestIsSecureLoginRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	for _, test := range []struct {
-		name      string
-		url       string
-		forwarded string
-		secure    bool
+		name           string
+		url            string
+		forwarded      string
+		remoteAddress  string
+		trustedProxies []string
+		secure         bool
 	}{
 		{name: "plain HTTP", url: "http://login.example/login", secure: false},
 		{name: "direct HTTPS", url: "https://login.example/login", secure: true},
-		{name: "TLS proxy", url: "http://login.example/login", forwarded: "https", secure: true},
+		{name: "spoofed forwarded scheme", url: "http://login.example/login", forwarded: "https", remoteAddress: "198.51.100.7:1234", secure: false},
+		{name: "trusted TLS proxy", url: "http://login.example/login", forwarded: "https", remoteAddress: "10.2.3.4:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: true},
+		{name: "untrusted TLS proxy", url: "http://login.example/login", forwarded: "https", remoteAddress: "192.0.2.10:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			context, _ := gin.CreateTestContext(httptest.NewRecorder())
 			context.Request = httptest.NewRequest(http.MethodPost, test.url, nil)
+			context.Request.RemoteAddr = test.remoteAddress
 			if test.forwarded != "" {
 				context.Request.Header.Set("X-Forwarded-Proto", test.forwarded)
 			}
-			assert.Equal(t, test.secure, isSecureLoginRequest(context))
+			trustedProxies, err := parseTrustedProxySet(test.trustedProxies)
+			require.NoError(t, err)
+			assert.Equal(t, test.secure, (&Api{trustedProxies: trustedProxies}).isSecureLoginRequest(context))
 		})
 	}
 }
@@ -425,8 +432,7 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 
 			for _, endpoint := range endpoints {
 				t.Run(endpoint, func(t *testing.T) {
-					request := httptest.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(requestBody))
-					request.Header.Set("X-Forwarded-Proto", "https")
+					request := httptest.NewRequest(http.MethodPost, "https://login.example"+endpoint, bytes.NewBuffer(requestBody))
 
 					recorder := httptest.NewRecorder()
 					router.ServeHTTP(recorder, request)
@@ -473,6 +479,7 @@ func TestLoginHandlerDropsTrustedDeviceCredentialsOverPlainHTTP(t *testing.T) {
 	})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "http://login.example/login", bytes.NewBuffer(requestBody))
+	request.Header.Set("X-Forwarded-Proto", "https")
 	recorder := httptest.NewRecorder()
 
 	router.ServeHTTP(recorder, request)

@@ -54,7 +54,7 @@ func (_api *Api) login(c *gin.Context) {
 		trustedDeviceToken := ""
 		trustDevice := false
 		deviceName := ""
-		secureLoginRequest := isSecureLoginRequest(c)
+		secureLoginRequest := _api.isSecureLoginRequest(c)
 		if secureLoginRequest {
 			trustedDeviceToken = payload.TrustedDeviceToken
 			trustDevice = payload.TrustDevice
@@ -109,12 +109,15 @@ func (api *Api) hasIncompatibleAuthType() bool {
 	return api.LuaConfigManager.GetString("authType") != "session"
 }
 
-func isSecureLoginRequest(c *gin.Context) bool {
+func (api *Api) isSecureLoginRequest(c *gin.Context) bool {
 	if c == nil || c.Request == nil {
 		return false
 	}
 	if c.Request.TLS != nil {
 		return true
+	}
+	if api == nil || !api.trustedProxies.containsRemoteAddress(c.Request.RemoteAddr) {
+		return false
 	}
 	forwardedProto := strings.TrimSpace(strings.Split(c.GetHeader("X-Forwarded-Proto"), ",")[0])
 	return strings.EqualFold(forwardedProto, "https")

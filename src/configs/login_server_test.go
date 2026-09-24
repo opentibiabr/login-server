@@ -27,6 +27,13 @@ func TestGetHttpLoginConfigs(t *testing.T) {
 	}
 }
 
+func TestGetHttpLoginConfigsTrustedProxies(t *testing.T) {
+	t.Setenv(EnvLoginTrustedProxiesKey, "127.0.0.1, 10.0.0.0/8, ::1")
+
+	configs := getHttpLoginConfigs()
+	assert.Equal(t, []string{"127.0.0.1", "10.0.0.0/8", "::1"}, configs.TrustedProxies)
+}
+
 func TestGetLogLevel(t *testing.T) {
 	tests := []struct {
 		name     string

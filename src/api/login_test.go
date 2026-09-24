@@ -43,6 +43,8 @@ func TestIsSecureLoginRequest(t *testing.T) {
 		{name: "spoofed forwarded scheme", url: "http://login.example/login", forwarded: "https", remoteAddress: "198.51.100.7:1234", secure: false},
 		{name: "trusted TLS proxy", url: "http://login.example/login", forwarded: "https", remoteAddress: "10.2.3.4:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: true},
 		{name: "untrusted TLS proxy", url: "http://login.example/login", forwarded: "https", remoteAddress: "192.0.2.10:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: false},
+		{name: "trusted proxy with prepended client value", url: "http://login.example/login", forwarded: "https, http", remoteAddress: "10.2.3.4:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: false},
+		{name: "trusted proxy with appended scheme", url: "http://login.example/login", forwarded: "http, https", remoteAddress: "10.2.3.4:1234", trustedProxies: []string{"10.0.0.0/8"}, secure: false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			context, _ := gin.CreateTestContext(httptest.NewRecorder())
@@ -56,6 +58,16 @@ func TestIsSecureLoginRequest(t *testing.T) {
 			assert.Equal(t, test.secure, (&Api{trustedProxies: trustedProxies}).isSecureLoginRequest(context))
 		})
 	}
+}
+
+func TestParseTrustedProxySetRejectsBroadMappedIPv6Prefix(t *testing.T) {
+	_, err := parseTrustedProxySet([]string{"::ffff:192.0.2.1/95"})
+	require.Error(t, err)
+
+	proxies, err := parseTrustedProxySet([]string{"::ffff:192.0.2.1/120"})
+	require.NoError(t, err)
+	assert.True(t, proxies.containsRemoteAddress("192.0.2.25:1234"))
+	assert.False(t, proxies.containsRemoteAddress("192.0.3.25:1234"))
 }
 
 func Test_buildErrorPayloadFromMessage(t *testing.T) {

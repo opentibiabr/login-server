@@ -26,9 +26,15 @@ func parseTrustedProxySet(entries []string) (trustedProxySet, error) {
 			continue
 		}
 
-		_, network, err := net.ParseCIDR(entry)
+		ip, network, err := net.ParseCIDR(entry)
 		if err != nil {
 			return nil, fmt.Errorf("invalid trusted proxy %q: %w", entry, err)
+		}
+		if strings.Contains(entry, ":") && ip.To4() != nil {
+			ones, _ := network.Mask.Size()
+			if ones < 96 {
+				return nil, fmt.Errorf("invalid trusted proxy %q: IPv4-mapped IPv6 prefixes must be /96 or longer", entry)
+			}
 		}
 		proxies = append(proxies, network)
 	}

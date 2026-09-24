@@ -119,7 +119,11 @@ func (api *Api) isSecureLoginRequest(c *gin.Context) bool {
 	if api == nil || !api.trustedProxies.containsRemoteAddress(c.Request.RemoteAddr) {
 		return false
 	}
-	forwardedProto := strings.TrimSpace(strings.Split(c.GetHeader("X-Forwarded-Proto"), ",")[0])
+	forwardedValues := c.Request.Header.Values("X-Forwarded-Proto")
+	if len(forwardedValues) != 1 || strings.Contains(forwardedValues[0], ",") {
+		return false
+	}
+	forwardedProto := strings.TrimSpace(forwardedValues[0])
 	return strings.EqualFold(forwardedProto, "https")
 }
 

@@ -48,7 +48,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	gin.SetMode(gin.ReleaseMode)
 
-	_api.Router = gin.New()
+	_api.Router = newRouter(configs.GetEnvStr("LOGIN_TRUSTED_PROXIES", ""))
 	_api.Router.Use(cors.Default())
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())

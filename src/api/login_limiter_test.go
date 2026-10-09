@@ -84,11 +84,11 @@ func newLimitedLoginRouter(t *testing.T) (*gin.Engine, *limiter.IPRateLimiter) {
 	// deterministic even when the test machine is busy. Production configuration
 	// supplies the unchanged RATE_LIMITER_RATE and RATE_LIMITER_BURST values.
 	ipLimiter := &limiter.IPRateLimiter{
-		Visitors:      make(map[string]*limiter.Visitor),
-		Mu:            &sync.RWMutex{},
-		Configs:       configs.RateLimiter{Rate: 1.0 / 86400, Burst: loginTestBurst},
-		KeyForRequest: loginRateLimitKey,
+		Visitors: make(map[string]*limiter.Visitor),
+		Mu:       &sync.RWMutex{},
+		Configs:  configs.RateLimiter{Rate: 1.0 / 86400, Burst: loginTestBurst},
 	}
+	ipLimiter.KeyForRequest = loginRateLimitKey(ipLimiter)
 	api := &Api{
 		Router:           gin.New(),
 		CorePath:         corePath,

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -41,10 +42,10 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.DB = database.PullConnection(gConfigs)
 
 	ipLimiter := &limiter.IPRateLimiter{
-		Visitors:      make(map[string]*limiter.Visitor),
-		Mu:            &sync.RWMutex{},
-		KeyForRequest: loginRateLimitKey,
+		Visitors: make(map[string]*limiter.Visitor),
+		Mu:       &sync.RWMutex{},
 	}
+	ipLimiter.KeyForRequest = loginRateLimitKey(ipLimiter)
 
 	ipLimiter.Init()
 
@@ -98,7 +99,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 }
 
 func (_api *Api) Run(gConfigs configs.GlobalConfigs) error {
-	err := http.ListenAndServe(gConfigs.LoginServerConfigs.Http.Format(), _api.Router)
+	err := _api.httpServer(gConfigs.LoginServerConfigs.Http.Format()).ListenAndServe()
 
 	/* Make sure we free the reverse proxy connection */
 	if _api.GrpcConnection != nil {
@@ -109,6 +110,15 @@ func (_api *Api) Run(gConfigs configs.GlobalConfigs) error {
 	}
 
 	return err
+}
+
+func (_api *Api) httpServer(address string) *http.Server {
+	return &http.Server{
+		Addr:              address,
+		Handler:           _api.Router,
+		ReadTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 }
 
 func (_api *Api) GetName() string {

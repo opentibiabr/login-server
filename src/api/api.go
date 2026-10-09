@@ -40,8 +40,9 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 	_api.DB = database.PullConnection(gConfigs)
 
 	ipLimiter := &limiter.IPRateLimiter{
-		Visitors: make(map[string]*limiter.Visitor),
-		Mu:       &sync.RWMutex{},
+		Visitors:      make(map[string]*limiter.Visitor),
+		Mu:            &sync.RWMutex{},
+		KeyForRequest: loginRateLimitKey,
 	}
 
 	ipLimiter.Init()

@@ -15,6 +15,8 @@ type IPRateLimiter struct {
 	Visitors map[string]*Visitor
 	Mu       *sync.RWMutex
 	Configs  configs.RateLimiter
+	// KeyForRequest may partition server-defined request classes for the same IP.
+	KeyForRequest func(*gin.Context, string) string
 }
 
 type Visitor struct {
@@ -59,6 +61,9 @@ func (rl *IPRateLimiter) cleanupVisitors() {
 func (rl *IPRateLimiter) Limit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
+		if rl.KeyForRequest != nil {
+			ip = rl.KeyForRequest(c, ip)
+		}
 
 		limiter := rl.getVisitor(ip)
 		if !limiter.Allow() {

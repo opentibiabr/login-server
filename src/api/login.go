@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opentibiabr/login-server/src/api/limiter"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
@@ -37,24 +38,30 @@ func bindLoginRequest(c *gin.Context) *boundLoginRequest {
 	return request
 }
 
-func loginRateLimitKey(c *gin.Context, ip string) string {
-	if c.Request.Method != http.MethodPost {
-		return ip
-	}
-	switch c.FullPath() {
-	case "/", "/login", "/login.php":
-	default:
-		return ip
-	}
-
-	request := bindLoginRequest(c)
-	if request.err == nil {
-		switch request.payload.Type {
-		case "cacheinfo", "news", "newsviewed", "eventschedule", "boostedcreature":
-			return "public:" + ip
+func loginRateLimitKey(ipLimiter *limiter.IPRateLimiter) func(*gin.Context, string) (string, bool) {
+	return func(c *gin.Context, ip string) (string, bool) {
+		if c.Request.Method != http.MethodPost {
+			return ip, true
 		}
+		switch c.FullPath() {
+		case "/", "/login", "/login.php":
+		default:
+			return ip, true
+		}
+
+		publicKey := "public:" + ip
+		if !ipLimiter.CanAllowAny(ip, publicKey) {
+			return ip, false
+		}
+		request := bindLoginRequest(c)
+		if request.err == nil {
+			switch request.payload.Type {
+			case "cacheinfo", "news", "newsviewed", "eventschedule", "boostedcreature":
+				return publicKey, true
+			}
+		}
+		return ip, true
 	}
-	return ip
 }
 
 func (_api *Api) login(c *gin.Context) {

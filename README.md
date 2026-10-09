@@ -66,6 +66,11 @@ remain in the authentication bucket. Idle buckets expire after three minutes.
 
 Login JSON is decoded once and shared between admission and dispatch. Its body is
 limited to 1 MiB; invalid or oversized JSON retains the HTTP 400 JSON error format.
+When neither request class can admit a request, the server returns HTTP 429 before
+reading the JSON body. The capacity check does not consume quota; the selected
+class's final admission remains authoritative under concurrent requests. The HTTP
+server bounds header reads to five seconds and complete request reads to 30
+seconds, including slow bodies that begin while capacity is available.
 
 **Tests**  
 `go test ./...`

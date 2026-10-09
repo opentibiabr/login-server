@@ -49,11 +49,11 @@ func TestLoginRateLimitPreservesDeployedSecondFactorAndTransportRules(t *testing
 				}
 				api := &Api{Router: gin.New(), GrpcConnection: connection, LuaConfigManager: config}
 				ipLimiter := &limiter.IPRateLimiter{
-					Visitors:      make(map[string]*limiter.Visitor),
-					Mu:            &sync.RWMutex{},
-					Configs:       configs.RateLimiter{Rate: 1.0 / 86400, Burst: loginTestBurst},
-					KeyForRequest: loginRateLimitKey,
+					Visitors: make(map[string]*limiter.Visitor),
+					Mu:       &sync.RWMutex{},
+					Configs:  configs.RateLimiter{Rate: 1.0 / 86400, Burst: loginTestBurst},
 				}
+				ipLimiter.KeyForRequest = loginRateLimitKey(ipLimiter)
 				api.Router.Use(ipLimiter.Limit())
 				api.initializeRoutes()
 				for attempt := 0; attempt < loginTestBurst; attempt++ {

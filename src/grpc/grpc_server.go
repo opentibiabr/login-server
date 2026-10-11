@@ -16,6 +16,8 @@ import (
 type GrpcServer struct {
 	DB                         *sql.DB
 	AuthenticatorEncryptionKey string
+	testGodLoginPolicy         configs.TestGodLoginPolicy
+	testGodLoginPolicyError    error
 	login_proto_messages.LoginServiceServer
 	server.ServerInterface
 }
@@ -23,6 +25,10 @@ type GrpcServer struct {
 func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 	var ls GrpcServer
 
+	ls.testGodLoginPolicy, ls.testGodLoginPolicyError = configs.NewTestGodLoginPolicy(gConfigs, configs.GetEnvStr(configs.EnvServerPathKey))
+	if ls.testGodLoginPolicyError != nil {
+		return &ls
+	}
 	ls.DB = database.PullConnection(gConfigs)
 	ls.AuthenticatorEncryptionKey = gConfigs.LoginServerConfigs.Authenticator.EncryptionKey
 
@@ -30,6 +36,9 @@ func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 }
 
 func (ls *GrpcServer) Run(gConfigs configs.GlobalConfigs) error {
+	if ls.testGodLoginPolicyError != nil {
+		return ls.testGodLoginPolicyError
+	}
 	if _, err := authenticator.DecodeEncryptionKey(ls.AuthenticatorEncryptionKey); err != nil {
 		return fmt.Errorf("invalid authenticator configuration: %w", err)
 	}

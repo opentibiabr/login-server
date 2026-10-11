@@ -19,6 +19,9 @@ const configurationErrorMessage = "Game world configuration error. Please contac
 const livestreamUnavailableMessage = "No active livestream casters found, or livestream login is disabled."
 
 func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginRequest) (*login_proto_messages.LoginResponse, error) {
+	if ls.testGodLoginPolicyError != nil {
+		return buildConfigurationErrorResponse(toConfigurationError(ls.testGodLoginPolicyError), false), nil
+	}
 	if database.IsLivestreamLogin(in.Email) {
 		return ls.loginLivestream(ctx, in.Password)
 	}
@@ -39,7 +42,7 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
 	}
 
-	verification, err := acc.VerifyLoginSecondFactor(ctx, ls.DB, in.Token, in.TrustedDeviceToken, ls.AuthenticatorEncryptionKey)
+	verification, err := acc.VerifyLoginSecondFactorWithPolicy(ctx, ls.DB, in.Token, in.TrustedDeviceToken, ls.AuthenticatorEncryptionKey, ls.testGodLoginPolicy)
 	if err != nil {
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
 	}

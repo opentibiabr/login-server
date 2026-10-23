@@ -98,6 +98,20 @@ Set `LOGIN_TRUSTED_PROXIES` to the immediate reverse proxy's IP addresses or CID
 
 Changing or recovering the account password, enabling, replacing, or disabling the authenticator, and explicit device removal must delete the affected rows from `account_trusted_devices`. The account website exposes individual and all-device revocation. Expiry is absolute and is not extended by use.
 
+## Livestream spy targets
+
+GOD accounts (type 6) that passed second-factor verification get extra `Spy: <name>` entries after their real characters, one per saved target, including offline ones. The list is read from `account_livestream_spy_targets` (at most 64 targets, ordered by name, non-deleted players only); ordinary accounts never query it. If the table is missing the server logs a warning and omits the entries, so normal login keeps working.
+
+```sql
+CREATE TABLE `account_livestream_spy_targets` (
+  `account_id` int unsigned NOT NULL,
+  `target_id` int NOT NULL,
+  PRIMARY KEY (`account_id`, `target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+`target_id` is `players.id`. A target whose `Spy: <name>` would collide with a real character of the same GOD account is omitted.
+
 ## Docker
 `docker pull opentibiabr/login-server:latest`<br><br>
 [![Automation](https://img.shields.io/docker/cloud/automated/opentibiabr/login-server)](https://hub.docker.com/r/opentibiabr/login-server)

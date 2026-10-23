@@ -27,6 +27,13 @@ func TestGetHttpLoginConfigs(t *testing.T) {
 	}
 }
 
+func TestGetHttpLoginConfigsTrustedProxies(t *testing.T) {
+	t.Setenv(EnvLoginTrustedProxiesKey, "127.0.0.1, 10.0.0.0/8, ::1")
+
+	configs := getHttpLoginConfigs()
+	assert.Equal(t, []string{"127.0.0.1", "10.0.0.0/8", "::1"}, configs.TrustedProxies)
+}
+
 func TestGetLogLevel(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -145,6 +152,12 @@ func TestGetRateLimiterConfigs(t *testing.T) {
 			assert.Equal(t, tt.want, GetRateLimiterConfigs())
 		})
 	}
+}
+
+func TestGetAuthenticatorConfigs(t *testing.T) {
+	t.Setenv(EnvAuthenticatorEncryptionKey, "encoded-key")
+
+	assert.Equal(t, AuthenticatorConfigs{EncryptionKey: "encoded-key"}, getAuthenticatorConfigs())
 }
 
 func TestGetGrpcLoginConfigs(t *testing.T) {

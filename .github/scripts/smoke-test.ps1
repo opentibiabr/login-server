@@ -76,6 +76,7 @@ $startInfo.Environment["MYSQL_USER"] = "login_server_smoke"
 $startInfo.Environment["MYSQL_PASS"] = "login_server_smoke"
 $startInfo.Environment["RATE_LIMITER_BURST"] = "100"
 $startInfo.Environment["RATE_LIMITER_RATE"] = "100"
+$startInfo.Environment["AUTHENTICATOR_ENCRYPTION_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 $process = [System.Diagnostics.Process]::Start($startInfo)
 $smokeSucceeded = $false

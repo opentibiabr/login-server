@@ -12,16 +12,21 @@ const (
 	// 3000-3999: login service operational errors.
 	// 4000-4999: game data/configuration availability errors.
 	// New codes should use the next free value in the matching range.
-	CodeInvalidCredentials        = 3
-	CodeDatabaseUnavailable       = 2001
-	CodeAccountDataUnavailable    = 2002
-	CodeCharacterListLoadFailed   = 2003
-	CodeSessionStorageUnavailable = 2004
-	CodeSessionCreateFailed       = 2005
-	CodeLoginServiceUnavailable   = 3001
-	CodeUnsupportedRequestType    = 3002
-	CodeEventScheduleUnavailable  = 4001
-	CodeBoostedDataUnavailable    = 4002
+	CodeInvalidCredentials                = 3
+	CodeAuthenticatorRequired             = 6
+	CodeStaffAuthenticatorRequired        = 7
+	CodeDatabaseUnavailable               = 2001
+	CodeAccountDataUnavailable            = 2002
+	CodeCharacterListLoadFailed           = 2003
+	CodeSessionStorageUnavailable         = 2004
+	CodeSessionCreateFailed               = 2005
+	CodeAuthenticatorDataUnavailable      = 2006
+	CodeLoginServiceUnavailable           = 3001
+	CodeUnsupportedRequestType            = 3002
+	CodeAuthenticatorConfigurationInvalid = 3003
+	CodeSessionAuthenticationRequired     = 3004
+	CodeEventScheduleUnavailable          = 4001
+	CodeBoostedDataUnavailable            = 4002
 )
 
 const invalidCredentialsMessage = "Account email or password is not correct."
@@ -65,6 +70,14 @@ func MessageWithHint(err *PublicError) string {
 
 func InvalidCredentials() *PublicError {
 	return New(CodeInvalidCredentials, "INVALID_CREDENTIALS", invalidCredentialsMessage, nil)
+}
+
+func AuthenticatorRequired() *PublicError {
+	return New(CodeAuthenticatorRequired, "AUTHENTICATOR_REQUIRED", "Two-factor authentication token is required or invalid.", nil)
+}
+
+func StaffAuthenticatorRequired() *PublicError {
+	return New(CodeStaffAuthenticatorRequired, "STAFF_AUTHENTICATOR_REQUIRED", "Staff accounts must enable two-factor authentication on the account website before logging in.", nil)
 }
 
 func LoginService(code int, name string, cause error) *PublicError {

@@ -39,6 +39,30 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
 	}
 
+	verification, err := acc.VerifyLoginSecondFactor(ctx, ls.DB, in.Token, in.TrustedDeviceToken, ls.AuthenticatorEncryptionKey)
+	if err != nil {
+		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
+	}
+	spyTargets, err := database.LoadLivestreamSpyTargets(ctx, ls.DB, acc)
+	if err != nil {
+		spyTargets = nil
+		if errors.Is(err, database.ErrLivestreamSpyTargetsUnavailable) {
+			logger.Warn(fmt.Sprintf("Spy entries omitted for account %d: migrate account_livestream_spy_targets before enabling spy lists (%v)", acc.ID, err))
+		} else {
+			logger.Warn(fmt.Sprintf("Spy entries omitted for account %d: spy target lookup failed (%v)", acc.ID, err))
+		}
+	}
+	characters = append(characters, spyTargets...)
+	if in.TrustDevice && verification.VerifiedWithAuthenticator {
+		trustedToken, expiresAt, issueErr := acc.IssueTrustedDevice(ctx, ls.DB, in.DeviceName)
+		if issueErr != nil {
+			logger.Error(fmt.Errorf("trusted device issue failed: %w", issueErr))
+		} else {
+			verification.TrustedDeviceToken = trustedToken
+			verification.TrustedDeviceExpiresAt = expiresAt
+		}
+	}
+
 	sessionKey, err := acc.CreateSession(ctx, ls.DB)
 	if err != nil {
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
@@ -49,7 +73,9 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 			Characters: characters,
 			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
 		},
-		Session: acc.GetGrpcSession(sessionKey),
+		Session:                acc.GetGrpcSession(sessionKey),
+		TrustedDeviceToken:     verification.TrustedDeviceToken,
+		TrustedDeviceExpiresAt: verification.TrustedDeviceExpiresAt,
 	}
 
 	logger.WithFields(logrus.Fields{
@@ -150,10 +176,15 @@ func buildLivestreamUnavailableResponse() *login_proto_messages.LoginResponse {
 }
 
 func buildLivestreamSession(password string) *login_proto_messages.Session {
+	sessionKey := database.LivestreamSessionAccount
+	if password != "" {
+		sessionKey += "\n" + password
+	}
+
 	return &login_proto_messages.Session{
 		IsPremium:    false,
 		PremiumUntil: 0,
-		SessionKey:   database.LivestreamSessionAccount + "\n" + password,
+		SessionKey:   sessionKey,
 		LastLogin:    0,
 	}
 }

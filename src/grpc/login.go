@@ -166,10 +166,15 @@ func buildLivestreamUnavailableResponse() *login_proto_messages.LoginResponse {
 }
 
 func buildLivestreamSession(password string) *login_proto_messages.Session {
+	sessionKey := database.LivestreamSessionAccount
+	if password != "" {
+		sessionKey += "\n" + password
+	}
+
 	return &login_proto_messages.Session{
 		IsPremium:    false,
 		PremiumUntil: 0,
-		SessionKey:   database.LivestreamSessionAccount + "\n" + password,
+		SessionKey:   sessionKey,
 		LastLogin:    0,
 	}
 }

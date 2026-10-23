@@ -9,6 +9,7 @@ import (
 	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
+	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
 	"github.com/opentibiabr/login-server/src/serviceerrors"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,7 +68,7 @@ func TestBuildLivestreamSession(t *testing.T) {
 	assert.Equal(t, database.LivestreamSessionAccount+"\nany-password", session.SessionKey)
 
 	emptyPasswordSession := buildLivestreamSession("")
-	assert.Equal(t, database.LivestreamSessionAccount+"\n", emptyPasswordSession.SessionKey)
+	assert.Equal(t, database.LivestreamSessionAccount, emptyPasswordSession.SessionKey)
 }
 
 func TestBuildLivestreamUnavailableResponse(t *testing.T) {
@@ -79,24 +80,38 @@ func TestBuildLivestreamUnavailableResponse(t *testing.T) {
 }
 
 func TestLoginLivestreamSuccess(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
+	for _, test := range []struct {
+		name       string
+		password   string
+		sessionKey string
+	}{
+		{name: "public stream", sessionKey: "@livestream"},
+		{name: "protected stream", password: "stream-password", sessionKey: "@livestream\nstream-password"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			assert.NoError(t, err)
+			defer db.Close()
 
-	rows := sqlmock.NewRows(livestreamCasterColumns()).
-		AddRow("Caster", uint32(250), uint32(1), 4, uint32(128), uint32(10), uint32(20), uint32(30), uint32(40), uint32(0), uint32(123))
-	mock.ExpectQuery("SELECT p.name").
-		WithArgs(database.LivestreamStatusActive).
-		WillReturnRows(rows)
+			rows := sqlmock.NewRows(livestreamCasterColumns()).
+				AddRow("Caster", uint32(250), uint32(1), 4, uint32(128), uint32(10), uint32(20), uint32(30), uint32(40), uint32(0), uint32(123))
+			mock.ExpectQuery("SELECT p.name").
+				WithArgs(database.LivestreamStatusActive).
+				WillReturnRows(rows)
 
-	response, err := (&GrpcServer{DB: db}).loginLivestream(context.Background(), "stream-password")
-	assert.NoError(t, err)
-	assert.Nil(t, response.GetError())
-	assert.NotNil(t, response.GetPlayData())
-	assert.Len(t, response.GetPlayData().GetCharacters(), 1)
-	assert.NotNil(t, response.GetSession())
-	assert.Equal(t, database.LivestreamSessionAccount+"\nstream-password", response.GetSession().GetSessionKey())
-	assert.NoError(t, mock.ExpectationsWereMet())
+			response, err := (&GrpcServer{DB: db}).Login(context.Background(), &login_proto_messages.LoginRequest{
+				Email:    database.LivestreamSessionAccount,
+				Password: test.password,
+			})
+			assert.NoError(t, err)
+			assert.Nil(t, response.GetError())
+			assert.NotNil(t, response.GetPlayData())
+			assert.Len(t, response.GetPlayData().GetCharacters(), 1)
+			assert.NotNil(t, response.GetSession())
+			assert.Equal(t, test.sessionKey, response.GetSession().GetSessionKey())
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
 }
 
 func TestLoginLivestreamUnavailableForEmptyCasters(t *testing.T) {

@@ -402,11 +402,27 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 				assert.Equal(t, "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", payload.Session.SessionKey)
 			},
 		},
+		{
+			name:       "public livestream session key",
+			sessionKey: "@livestream",
+			authType:   "session",
+			assertions: func(t *testing.T, payload loginResponsePayload) {
+				assert.Equal(t, "@livestream", payload.Session.SessionKey)
+			},
+		},
+		{
+			name:       "password protected livestream session key",
+			sessionKey: "@livestream\nstream-password",
+			authType:   "session",
+			assertions: func(t *testing.T, payload loginResponsePayload) {
+				assert.Equal(t, "@livestream\nstream-password", payload.Session.SessionKey)
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			endpoints := []string{"/", "/login.php"}
+			endpoints := []string{"/", "/login", "/login.php"}
 
 			connection, loginService := newInMemoryLoginClient(t, &login_proto_messages.LoginResponse{
 				Session: &login_proto_messages.Session{
@@ -429,6 +445,7 @@ func Test_loginHandlerReturnsSessionFlowVariants(t *testing.T) {
 
 			router := gin.New()
 			router.POST("/", api.login)
+			router.POST("/login", api.login)
 			router.POST("/login.php", api.login)
 
 			requestBody, _ := json.Marshal(models.RequestPayload{

@@ -56,6 +56,22 @@ You can also download our docker image and apply the environment variables to yo
 |`SERVER_PORT`        | `game server game port`              |
 |`VOCATIONS`          | `game vocation list csv (a,b,c)`     |
 
+HTTP login aliases `/`, `/login`, and `/login.php` separate authentication traffic
+from the public `cacheinfo`, `news`, `newsviewed`, `eventschedule`, and
+`boostedcreature` requests. Each IP has one authentication bucket and one shared
+public bucket, both using `RATE_LIMITER_RATE` and `RATE_LIMITER_BURST`. Public
+bootstrap requests therefore cannot consume the authentication burst of clients
+sharing an IP. Malformed payloads, unsupported request types, and other routes
+remain in the authentication bucket. Idle buckets expire after three minutes.
+
+Login JSON is decoded once and shared between admission and dispatch. Its body is
+limited to 1 MiB; invalid or oversized JSON retains the HTTP 400 JSON error format.
+When neither request class can admit a request, the server returns HTTP 429 before
+reading the JSON body. The capacity check does not consume quota; the selected
+class's final admission remains authoritative under concurrent requests. The HTTP
+server bounds header reads to five seconds and complete request reads to 30
+seconds, including slow bodies that begin while capacity is available.
+
 **Tests**  
 `go test ./...`
 

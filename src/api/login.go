@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opentibiabr/login-server/src/api/limiter"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
@@ -15,13 +16,61 @@ import (
 
 const temporaryErrorCode = 2
 const temporaryErrorMessage = "Internal error. Please try again later or contact customer support if the problem persists."
+const loginRequestContextKey = "login-server.request"
+const maxLoginRequestBytes = 1 << 20
+
+type boundLoginRequest struct {
+	payload models.RequestPayload
+	err     error
+}
+
+func bindLoginRequest(c *gin.Context) *boundLoginRequest {
+	if request, exists := c.Get(loginRequestContextKey); exists {
+		return request.(*boundLoginRequest)
+	}
+
+	request := &boundLoginRequest{}
+	if c.Request.Body != nil {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxLoginRequestBytes)
+	}
+	request.err = c.ShouldBindJSON(&request.payload)
+	c.Set(loginRequestContextKey, request)
+	return request
+}
+
+func loginRateLimitKey(ipLimiter *limiter.IPRateLimiter) func(*gin.Context, string) (string, bool) {
+	return func(c *gin.Context, ip string) (string, bool) {
+		if c.Request.Method != http.MethodPost {
+			return ip, true
+		}
+		switch c.FullPath() {
+		case "/", "/login", "/login.php":
+		default:
+			return ip, true
+		}
+
+		publicKey := "public:" + ip
+		if !ipLimiter.CanAllowAny(ip, publicKey) {
+			return ip, false
+		}
+		request := bindLoginRequest(c)
+		if request.err == nil {
+			switch request.payload.Type {
+			case "cacheinfo", "news", "newsviewed", "eventschedule", "boostedcreature":
+				return publicKey, true
+			}
+		}
+		return ip, true
+	}
+}
 
 func (_api *Api) login(c *gin.Context) {
-	var payload models.RequestPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	request := bindLoginRequest(c)
+	if request.err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": request.err.Error()})
 		return
 	}
+	payload := request.payload
 
 	switch payload.Type {
 	case "cacheinfo", "news", "newsviewed":

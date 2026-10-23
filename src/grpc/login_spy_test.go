@@ -25,6 +25,13 @@ const spyFixtureTrustedExpiry = uint64(4102444800)
 
 // All persistence and second-factor calls use sqlmock. No listener or real DB
 // is initialized; Login is invoked directly with an isolated account fixture.
+// ownedCharacterRows returns rows for the account's own characters: the stable id first, then the
+// columns shared with the livestream queries. Spy targets keep using livestreamCasterColumns alone,
+// because their virtual entries carry no character id.
+func ownedCharacterRows() *sqlmock.Rows {
+	return sqlmock.NewRows(append([]string{"id"}, livestreamCasterColumns()...))
+}
+
 func spyLoginFixture(t *testing.T, accountType uint32, owned *sqlmock.Rows, verified bool) (*GrpcServer, sqlmock.Sqlmock, *login_proto_messages.LoginRequest) {
 	t.Helper()
 	t.Setenv("SERVER_PATH", "")
@@ -41,7 +48,7 @@ func spyLoginFixture(t *testing.T, accountType uint32, owned *sqlmock.Rows, veri
 	mock.ExpectQuery("SELECT id, type, premdays, lastday FROM accounts").
 		WithArgs(in.Email, in.Email, fmt.Sprintf("%x", passwordHash)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(42, accountType, 0, 0))
-	mock.ExpectQuery(`SELECT name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons, lastlogin from players where account_id = "42"`).
+	mock.ExpectQuery(`SELECT id, name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons, lastlogin from players where account_id = "42"`).
 		WillReturnRows(owned).RowsWillBeClosed()
 	mock.ExpectQuery("SELECT secret_encrypted, last_used_step, blocked_until FROM account_authenticators").
 		WithArgs(uint32(42)).
@@ -103,9 +110,9 @@ func assertSpyNormalSession(t *testing.T, response *login_proto_messages.LoginRe
 }
 
 func TestLoginSpyAppendsVirtualCharactersWithoutChangingOwnedCharactersOrSession(t *testing.T) {
-	owned := sqlmock.NewRows(livestreamCasterColumns()).
-		AddRow("Zulu", 100, 1, 4, 128, 10, 20, 30, 40, 2, 123).
-		AddRow("Alpha", 50, 0, 2, 129, 1, 2, 3, 4, 0, 456)
+	owned := ownedCharacterRows().
+		AddRow(5001, "Zulu", 100, 1, 4, 128, 10, 20, 30, 40, 2, 123).
+		AddRow(5002, "Alpha", 50, 0, 2, 129, 1, 2, 3, 4, 0, 456)
 	ls, mock, in := spyLoginFixture(t, 6, owned, true)
 	mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42)).
 		WillReturnRows(sqlmock.NewRows(livestreamCasterColumns()).
@@ -119,6 +126,9 @@ func TestLoginSpyAppendsVirtualCharactersWithoutChangingOwnedCharactersOrSession
 	assert.Equal(t, "Zulu", characters[0].Info.Name)
 	assert.Equal(t, "Alpha", characters[1].Info.Name)
 	assert.Equal(t, "Spy: Offline Target", characters[2].Info.Name)
+	assert.Equal(t, uint32(5001), characters[0].CharacterId)
+	assert.Equal(t, uint32(5002), characters[1].CharacterId)
+	assert.Zero(t, characters[2].CharacterId, "a virtual spy entry never carries a character id")
 	assert.Equal(t, uint32(100), characters[0].Info.Level)
 	assert.Equal(t, "Knight", characters[0].Info.Vocation)
 	assert.Equal(t, uint32(2), characters[0].Outfit.Addons)
@@ -129,7 +139,7 @@ func TestLoginSpyAppendsVirtualCharactersWithoutChangingOwnedCharactersOrSession
 }
 
 func TestLoginSpyDoesNotCreateOwnedCharacterMetadata(t *testing.T) {
-	ls, mock, in := spyLoginFixture(t, 6, sqlmock.NewRows(livestreamCasterColumns()), true)
+	ls, mock, in := spyLoginFixture(t, 6, ownedCharacterRows(), true)
 	mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42)).
 		WillReturnRows(sqlmock.NewRows(livestreamCasterColumns()).
 			AddRow("Saved Target", 100, 1, 4, 128, 1, 2, 3, 4, 0, 999999))
@@ -143,8 +153,8 @@ func TestLoginSpyDoesNotCreateOwnedCharacterMetadata(t *testing.T) {
 }
 
 func TestLoginSpyKeepsOwnedCharacterWhenDatabaseOmitsCollidingVirtualName(t *testing.T) {
-	owned := sqlmock.NewRows(livestreamCasterColumns()).
-		AddRow("spy: Offline Target", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+	owned := ownedCharacterRows().
+		AddRow(5003, "spy: Offline Target", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
 	ls, mock, in := spyLoginFixture(t, 6, owned, true)
 	// Name collisions use the database collation; the query, rather than Go
 	// string comparison, omits the saved target from this mocked result.
@@ -157,6 +167,7 @@ func TestLoginSpyKeepsOwnedCharacterWhenDatabaseOmitsCollidingVirtualName(t *tes
 	characters := response.GetPlayData().GetCharacters()
 	require.Len(t, characters, 1)
 	assert.Equal(t, "spy: Offline Target", characters[0].Info.Name)
+	assert.Equal(t, uint32(5003), characters[0].CharacterId)
 	assert.Equal(t, uint32(100), characters[0].Info.Level)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -164,7 +175,7 @@ func TestLoginSpyKeepsOwnedCharacterWhenDatabaseOmitsCollidingVirtualName(t *tes
 func TestLoginSpyNeverQueriesTargetsForNonGODAccounts(t *testing.T) {
 	for _, accountType := range []uint32{1, 4, 5, 7} {
 		t.Run(fmt.Sprintf("type %d", accountType), func(t *testing.T) {
-			owned := sqlmock.NewRows(livestreamCasterColumns()).AddRow("Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+			owned := ownedCharacterRows().AddRow(5004, "Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
 			ls, mock, in := spyLoginFixture(t, accountType, owned, true)
 			hash := expectSpyNormalSession(mock)
 			response, err := ls.Login(context.Background(), in)
@@ -178,7 +189,7 @@ func TestLoginSpyNeverQueriesTargetsForNonGODAccounts(t *testing.T) {
 }
 
 func TestLoginSpyWaitsForSecondFactorBeforeQueryingTargetsOrCreatingSession(t *testing.T) {
-	ls, mock, in := spyLoginFixture(t, 6, sqlmock.NewRows(livestreamCasterColumns()), false)
+	ls, mock, in := spyLoginFixture(t, 6, ownedCharacterRows(), false)
 	response, err := ls.Login(context.Background(), in)
 	require.NoError(t, err)
 	require.NotNil(t, response.GetError())
@@ -191,7 +202,7 @@ func TestLoginSpyWaitsForSecondFactorBeforeQueryingTargetsOrCreatingSession(t *t
 
 func TestLoginSpyPreservesNormalLoginForMissingTableOrFreshRoleRevocation(t *testing.T) {
 	for _, missingTable := range []bool{false, true} {
-		owned := sqlmock.NewRows(livestreamCasterColumns()).AddRow("Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+		owned := ownedCharacterRows().AddRow(5004, "Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
 		ls, mock, in := spyLoginFixture(t, 6, owned, true)
 		query := mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42))
 		if missingTable {
@@ -231,8 +242,8 @@ func TestLoginSpyStorageErrorsPreserveOwnedCharactersAndSession(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			owned := sqlmock.NewRows(livestreamCasterColumns()).
-				AddRow("Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+			owned := ownedCharacterRows().
+				AddRow(5004, "Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
 			ls, mock, in := spyLoginFixture(t, 6, owned, true)
 			query := mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42))
 			if test.err != nil {

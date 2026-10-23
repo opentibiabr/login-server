@@ -6,6 +6,8 @@ import (
 
 type CharacterPayload struct {
 	WorldID uint32 `json:"worldid"`
+	// CharacterID is the stable players.id the client keys character profiles by; absent for entries without one.
+	CharacterID uint32 `json:"characterid,omitempty"`
 	CharacterInfo
 	Outfit
 }
@@ -41,6 +43,7 @@ func LoadCharactersFromMessage(charactersMsg []*login_proto_messages.Character) 
 func loadCharacterFromMessage(characterMsg *login_proto_messages.Character) CharacterPayload {
 	return CharacterPayload{
 		WorldID:       characterMsg.GetWorldId(),
+		CharacterID:   characterMsg.GetCharacterId(),
 		CharacterInfo: loadCharacterInfoFromMessage(characterMsg.GetInfo()),
 		Outfit:        loadOutfitInfoFromMessage(characterMsg.GetOutfit()),
 	}

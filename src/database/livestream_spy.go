@@ -41,6 +41,11 @@ func LoadLivestreamSpyTargets(ctx context.Context, db *sql.DB, acc *Account) ([]
 		INNER JOIN players p ON p.id = st.target_id
 		INNER JOIN accounts a ON a.id = st.account_id
 		WHERE st.account_id = ? AND a.type = 6 AND p.deletion = 0
+			AND NOT EXISTS (
+				SELECT 1 FROM players owned
+				WHERE owned.account_id = st.account_id
+					AND owned.name = CONCAT('Spy: ', p.name)
+			)
 		ORDER BY p.name ASC LIMIT 64`
 	rows, err := db.QueryContext(ctx, query, acc.ID)
 	if err != nil {

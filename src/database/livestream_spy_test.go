@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const spyTargetQuery = `SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody, p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin FROM account_livestream_spy_targets st INNER JOIN players p ON p.id = st.target_id INNER JOIN accounts a ON a.id = st.account_id WHERE st.account_id = \? AND a.type = 6 AND p.deletion = 0 ORDER BY p.name ASC LIMIT 64`
+const spyTargetQuery = `SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody, p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin FROM account_livestream_spy_targets st INNER JOIN players p ON p.id = st.target_id INNER JOIN accounts a ON a.id = st.account_id WHERE st.account_id = \? AND a.type = 6 AND p.deletion = 0 AND NOT EXISTS \( SELECT 1 FROM players owned WHERE owned.account_id = st.account_id AND owned.name = CONCAT\('Spy: ', p.name\) \) ORDER BY p.name ASC LIMIT 64`
 
 func TestLoadLivestreamSpyTargetsGODProjectionAndSessionIsolation(t *testing.T) {
 	t.Setenv("VOCATIONS", "None,Sorcerer,Druid,Paladin,Knight")

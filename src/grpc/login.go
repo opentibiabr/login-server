@@ -45,10 +45,12 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 	}
 	spyTargets, err := database.LoadLivestreamSpyTargets(ctx, ls.DB, acc)
 	if err != nil {
-		if !errors.Is(err, database.ErrLivestreamSpyTargetsUnavailable) {
-			return buildLoginErrorResponse(err, acc.IsAdmin()), nil
+		spyTargets = nil
+		if errors.Is(err, database.ErrLivestreamSpyTargetsUnavailable) {
+			logger.Warn(fmt.Sprintf("Spy entries omitted for account %d: migrate account_livestream_spy_targets before enabling spy lists (%v)", acc.ID, err))
+		} else {
+			logger.Warn(fmt.Sprintf("Spy entries omitted for account %d: spy target lookup failed (%v)", acc.ID, err))
 		}
-		logger.Warn(fmt.Sprintf("Spy entries omitted for account %d: migrate account_livestream_spy_targets before enabling spy lists (%v)", acc.ID, err))
 	}
 	characters = append(characters, spyTargets...)
 	if in.TrustDevice && verification.VerifiedWithAuthenticator {

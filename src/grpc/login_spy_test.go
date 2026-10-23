@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const loginSpyTargetQuery = `SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody, p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin FROM account_livestream_spy_targets st INNER JOIN players p ON p.id = st.target_id INNER JOIN accounts a ON a.id = st.account_id WHERE st.account_id = \? AND a.type = 6 AND p.deletion = 0 ORDER BY p.name ASC LIMIT 64`
+const loginSpyTargetQuery = `SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody, p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin FROM account_livestream_spy_targets st INNER JOIN players p ON p.id = st.target_id INNER JOIN accounts a ON a.id = st.account_id WHERE st.account_id = \? AND a.type = 6 AND p.deletion = 0 AND NOT EXISTS \( SELECT 1 FROM players owned WHERE owned.account_id = st.account_id AND owned.name = CONCAT\('Spy: ', p.name\) \) ORDER BY p.name ASC LIMIT 64`
 const spyFixtureTrustedExpiry = uint64(4102444800)
 
 // All persistence and second-factor calls use sqlmock. No listener or real DB
@@ -142,6 +142,25 @@ func TestLoginSpyDoesNotCreateOwnedCharacterMetadata(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestLoginSpyKeepsOwnedCharacterWhenDatabaseOmitsCollidingVirtualName(t *testing.T) {
+	owned := sqlmock.NewRows(livestreamCasterColumns()).
+		AddRow("spy: Offline Target", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+	ls, mock, in := spyLoginFixture(t, 6, owned, true)
+	// Name collisions use the database collation; the query, rather than Go
+	// string comparison, omits the saved target from this mocked result.
+	mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42)).
+		WillReturnRows(sqlmock.NewRows(livestreamCasterColumns()))
+	hash := expectSpyNormalSession(mock)
+	response, err := ls.Login(context.Background(), in)
+	require.NoError(t, err)
+	assertSpyNormalSession(t, response, hash, 123)
+	characters := response.GetPlayData().GetCharacters()
+	require.Len(t, characters, 1)
+	assert.Equal(t, "spy: Offline Target", characters[0].Info.Name)
+	assert.Equal(t, uint32(100), characters[0].Info.Level)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestLoginSpyNeverQueriesTargetsForNonGODAccounts(t *testing.T) {
 	for _, accountType := range []uint32{1, 4, 5, 7} {
 		t.Run(fmt.Sprintf("type %d", accountType), func(t *testing.T) {
@@ -190,15 +209,46 @@ func TestLoginSpyPreservesNormalLoginForMissingTableOrFreshRoleRevocation(t *tes
 	}
 }
 
-func TestLoginSpyUnexpectedQueryErrorReturnsServiceErrorWithoutCreatingSession(t *testing.T) {
-	ls, mock, in := spyLoginFixture(t, 6, sqlmock.NewRows(livestreamCasterColumns()), true)
-	mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42)).WillReturnError(errors.New("fixture query failed"))
-	response, err := ls.Login(context.Background(), in)
-	require.NoError(t, err)
-	require.NotNil(t, response.GetError())
-	assert.Equal(t, uint32(serviceerrors.CodeCharacterListLoadFailed), response.GetError().Code)
-	assert.Contains(t, response.GetError().Message, "CHARACTER_LIST_LOAD_FAILED")
-	assert.Nil(t, response.GetSession())
-	assert.Nil(t, response.GetPlayData())
-	assert.NoError(t, mock.ExpectationsWereMet())
+func TestLoginSpyStorageErrorsPreserveOwnedCharactersAndSession(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		err  error
+		rows *sqlmock.Rows
+	}{
+		{name: "query failure", err: errors.New("fixture query failed")},
+		{
+			name: "scan failure after first target",
+			rows: sqlmock.NewRows(livestreamCasterColumns()).
+				AddRow("First", 100, 1, 4, 128, 1, 2, 3, 4, 0, 999999).
+				AddRow("Bad Level", "not a number", 1, 4, 128, 1, 2, 3, 4, 0, 999999),
+		},
+		{
+			name: "terminal row failure after first target",
+			rows: sqlmock.NewRows(livestreamCasterColumns()).
+				AddRow("First", 100, 1, 4, 128, 1, 2, 3, 4, 0, 999999).
+				AddRow("Second", 100, 1, 4, 128, 1, 2, 3, 4, 0, 999999).
+				RowError(1, errors.New("fixture terminal row failure")),
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			owned := sqlmock.NewRows(livestreamCasterColumns()).
+				AddRow("Own Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123)
+			ls, mock, in := spyLoginFixture(t, 6, owned, true)
+			query := mock.ExpectQuery(loginSpyTargetQuery).WithArgs(uint32(42))
+			if test.err != nil {
+				query.WillReturnError(test.err)
+			} else {
+				query.WillReturnRows(test.rows).RowsWillBeClosed()
+			}
+			hash := expectSpyNormalSession(mock)
+			response, err := ls.Login(context.Background(), in)
+			require.NoError(t, err)
+			assertSpyNormalSession(t, response, hash, 123)
+			assert.NotEqual(t, in.TrustedDeviceToken, response.GetTrustedDeviceToken())
+			characters := response.GetPlayData().GetCharacters()
+			require.Len(t, characters, 1)
+			assert.Equal(t, "Own Character", characters[0].Info.Name)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
 }

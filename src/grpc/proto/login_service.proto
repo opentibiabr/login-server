@@ -35,6 +35,7 @@ message Character {
     uint32 world_id = 1;
     CharacterInfo info = 2;
     CharacterOutfit outfit = 3;
+    uint32 character_id = 4;
 }
 
 message CharacterInfo {

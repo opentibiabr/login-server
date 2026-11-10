@@ -63,7 +63,12 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		}
 	}
 
-	sessionKey, err := acc.CreateSession(ctx, ls.DB)
+	var sessionKey string
+	if verification.TrustedDeviceToken != "" && !verification.VerifiedWithAuthenticator {
+		sessionKey, err = acc.CreateTrustedDeviceSession(ctx, ls.DB, verification.TrustedDeviceToken)
+	} else {
+		sessionKey, err = acc.CreateSession(ctx, ls.DB)
+	}
 	if err != nil {
 		return buildLoginErrorResponse(err, acc.IsAdmin()), nil
 	}

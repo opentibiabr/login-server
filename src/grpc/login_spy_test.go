@@ -57,12 +57,18 @@ func spyLoginFixture(t *testing.T, accountType uint32, owned *sqlmock.Rows, veri
 		rawToken := []byte(strings.Repeat("a", 32))
 		in.TrustedDeviceToken = base64.RawURLEncoding.EncodeToString(rawToken)
 		tokenHash := sha256.Sum256(rawToken)
+		mock.ExpectBegin()
+		mock.ExpectQuery("SELECT id FROM accounts WHERE id = \\? FOR UPDATE").WithArgs(uint32(42)).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(42))
+		mock.ExpectQuery("SELECT game_mode FROM account_device_policies WHERE account_id = \\?").WithArgs(uint32(42)).
+			WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow("locked"))
 		mock.ExpectQuery("SELECT expires_at FROM account_trusted_devices").
 			WithArgs(uint32(42), tokenHash[:], sqlmock.AnyArg()).
 			WillReturnRows(sqlmock.NewRows([]string{"expires_at"}).AddRow(spyFixtureTrustedExpiry))
 		mock.ExpectExec("UPDATE account_trusted_devices").
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), uint32(42), tokenHash[:], sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectCommit()
 	}
 	return &GrpcServer{DB: db}, mock, in
 }
@@ -82,8 +88,16 @@ func (hash *spySessionHash) Match(value driver.Value) bool {
 
 func expectSpyNormalSession(mock sqlmock.Sqlmock) *spySessionHash {
 	hash := &spySessionHash{}
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT id FROM accounts WHERE id = \\? FOR UPDATE").WithArgs(uint32(42)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(42))
+	mock.ExpectQuery("SELECT game_mode FROM account_device_policies WHERE account_id = \\?").WithArgs(uint32(42)).
+		WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow("locked"))
+	mock.ExpectQuery("SELECT expires_at FROM account_trusted_devices").WithArgs(uint32(42), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"expires_at"}).AddRow(spyFixtureTrustedExpiry))
 	mock.ExpectExec("INSERT INTO `account_sessions`").
 		WithArgs(hash, uint32(42), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
 	return hash
 }
 

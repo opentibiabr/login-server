@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
 const (
@@ -22,6 +24,21 @@ const (
 
 var trustedDeviceNow = time.Now
 
+// Both website policy updates and game credentials lock the account first.
+// Missing policy rows preserve approved devices but never enroll a new one.
+func lockGameDevicePolicy(ctx context.Context, tx *sql.Tx, accountID uint32) (string, error) {
+	var lockedAccountID uint32
+	if err := tx.QueryRowContext(ctx, `SELECT id FROM accounts WHERE id = ? FOR UPDATE`, accountID).Scan(&lockedAccountID); err != nil {
+		return "", err
+	}
+	var mode string
+	err := tx.QueryRowContext(ctx, `SELECT game_mode FROM account_device_policies WHERE account_id = ?`, accountID).Scan(&mode)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "locked", nil
+	}
+	return mode, err
+}
+
 func (acc *Account) RotateTrustedDevice(ctx context.Context, db *sql.DB, token string) (string, uint64, bool, error) {
 	if acc == nil || db == nil || token == "" {
 		return "", 0, false, nil
@@ -31,12 +48,27 @@ func (acc *Account) RotateTrustedDevice(ctx context.Context, db *sql.DB, token s
 	if err != nil || len(raw) != trustedDeviceTokenBytes {
 		return "", 0, false, nil
 	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", 0, false, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	mode, err := lockGameDevicePolicy(ctx, tx, acc.ID)
+	if err != nil {
+		return "", 0, false, err
+	}
+	if mode != "open" && mode != "locked" {
+		return "", 0, false, nil
+	}
 
 	tokenHash := sha256.Sum256(raw)
 	now := trustedDeviceNow().Unix()
 	var expiresAt uint64
-	if err := db.QueryRowContext(ctx, `SELECT expires_at FROM account_trusted_devices
-		WHERE account_id = ? AND token_hash = ? AND expires_at > ?`, acc.ID, tokenHash[:], now).Scan(&expiresAt); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT expires_at FROM account_trusted_devices
+		WHERE account_id = ? AND purpose = 'game' AND token_hash = ? AND expires_at > ?`, acc.ID, tokenHash[:], now).Scan(&expiresAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", 0, false, nil
 		}
@@ -48,9 +80,9 @@ func (acc *Account) RotateTrustedDevice(ctx context.Context, db *sql.DB, token s
 		return "", 0, false, err
 	}
 
-	result, err := db.ExecContext(ctx, `UPDATE account_trusted_devices
+	result, err := tx.ExecContext(ctx, `UPDATE account_trusted_devices
 		SET token_hash = ?, last_used_at = ?
-		WHERE account_id = ? AND token_hash = ? AND expires_at > ?`,
+		WHERE account_id = ? AND purpose = 'game' AND token_hash = ? AND expires_at > ?`,
 		replacementHash[:], now, acc.ID, tokenHash[:], now)
 	if err != nil {
 		return "", 0, false, err
@@ -62,6 +94,9 @@ func (acc *Account) RotateTrustedDevice(ctx context.Context, db *sql.DB, token s
 	if affected != 1 {
 		return "", 0, false, nil
 	}
+	if err := tx.Commit(); err != nil {
+		return "", 0, false, err
+	}
 	return replacement, expiresAt, true, nil
 }
 
@@ -70,6 +105,21 @@ func (acc *Account) IssueTrustedDevice(ctx context.Context, db *sql.DB, deviceNa
 		return "", 0, errors.New("account or database connection is nil")
 	}
 
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", 0, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	mode, err := lockGameDevicePolicy(ctx, tx, acc.ID)
+	if err != nil {
+		return "", 0, err
+	}
+	if mode != "open" {
+		return "", 0, nil
+	}
 	token, tokenHash, err := newTrustedDeviceToken()
 	if err != nil {
 		return "", 0, err
@@ -78,32 +128,22 @@ func (acc *Account) IssueTrustedDevice(ctx context.Context, db *sql.DB, deviceNa
 	expiresAt := now + int64(trustedDeviceDuration/time.Second)
 	deviceName = normalizeTrustedDeviceName(deviceName)
 
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", 0, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	var lockedAccountID uint32
-	if err = tx.QueryRowContext(ctx, `SELECT id FROM accounts WHERE id = ? FOR UPDATE`, acc.ID).Scan(&lockedAccountID); err != nil {
-		return "", 0, err
-	}
-
 	if _, err = tx.ExecContext(ctx, `DELETE FROM account_trusted_devices
-		WHERE account_id = ? AND expires_at <= ?`, acc.ID, now); err != nil {
+		WHERE account_id = ? AND purpose = 'game' AND expires_at <= ?`, acc.ID, now); err != nil {
 		return "", 0, err
 	}
 	if _, err = tx.ExecContext(ctx, `DELETE FROM account_trusted_devices
-		WHERE account_id = ? AND id NOT IN (
+		WHERE account_id = ? AND purpose = 'game' AND id NOT IN (
 			SELECT id FROM (
 				SELECT id FROM account_trusted_devices
-				WHERE account_id = ? ORDER BY last_used_at DESC, id DESC LIMIT ?
+				WHERE account_id = ? AND purpose = 'game' ORDER BY last_used_at DESC, id DESC LIMIT ?
 			) AS recent_devices
 		)`, acc.ID, acc.ID, trustedDeviceMaxCount-1); err != nil {
 		return "", 0, err
 	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO account_trusted_devices
-		(account_id, token_hash, device_name, created_at, last_used_at, expires_at)
-		VALUES (?, ?, ?, ?, ?, ?)`, acc.ID, tokenHash[:], deviceName, now, now, expiresAt); err != nil {
+		(account_id, purpose, token_hash, device_name, created_at, last_used_at, expires_at)
+		VALUES (?, 'game', ?, ?, ?, ?, ?)`, acc.ID, tokenHash[:], deviceName, now, now, expiresAt); err != nil {
 		return "", 0, err
 	}
 	if err = tx.Commit(); err != nil {
@@ -111,6 +151,54 @@ func (acc *Account) IssueTrustedDevice(ctx context.Context, db *sql.DB, deviceNa
 	}
 
 	return token, uint64(expiresAt), nil
+}
+
+// Revalidate the rotated credential while persisting its game session. Otherwise
+// revocation between second-factor verification and INSERT could leave a new
+// session alive after the owner removed all trusted access.
+func (acc *Account) CreateTrustedDeviceSession(ctx context.Context, db *sql.DB, token string) (string, error) {
+	if acc == nil || db == nil {
+		return "", classifyAuthenticatorDataError(errors.New("account or database connection is nil"))
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil || len(raw) != trustedDeviceTokenBytes {
+		return "", serviceerrors.AuthenticatorRequired()
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	writeCtx, cancel := context.WithTimeout(ctx, sessionPersistenceTimeout)
+	defer cancel()
+	tx, err := db.BeginTx(writeCtx, nil)
+	if err != nil {
+		return "", classifyAuthenticatorDataError(err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	mode, err := lockGameDevicePolicy(writeCtx, tx, acc.ID)
+	if err != nil {
+		return "", classifyAuthenticatorDataError(err)
+	}
+	if mode != "open" && mode != "locked" {
+		return "", serviceerrors.AuthenticatorRequired()
+	}
+	tokenHash := sha256.Sum256(raw)
+	var expiresAt uint64
+	if err := tx.QueryRowContext(writeCtx, `SELECT expires_at FROM account_trusted_devices
+		WHERE account_id = ? AND purpose = 'game' AND token_hash = ? AND expires_at > ?`,
+		acc.ID, tokenHash[:], trustedDeviceNow().Unix()).Scan(&expiresAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", serviceerrors.AuthenticatorRequired()
+		}
+		return "", classifyAuthenticatorDataError(err)
+	}
+	session, err := acc.createSession(writeCtx, tx)
+	if err != nil {
+		return "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return "", serviceerrors.LoginService(serviceerrors.CodeSessionCreateFailed, "SESSION_CREATE_FAILED", err)
+	}
+	return session, nil
 }
 
 func newTrustedDeviceToken() (string, [sha256.Size]byte, error) {

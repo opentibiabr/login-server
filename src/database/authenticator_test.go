@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -62,12 +63,14 @@ func TestVerifyLoginSecondFactorAcceptsAndRotatesTrustedDevice(t *testing.T) {
 	expiresAt := uint64(now.Add(24 * time.Hour).Unix())
 	mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).
 		WillReturnRows(authenticatorRow("v1:unused", nil, 0))
-	mock.ExpectQuery("SELECT expires_at FROM account_trusted_devices").
+	expectGameDevicePolicy(mock, "locked", nil)
+	mock.ExpectQuery(regexp.QuoteMeta(gameDeviceSelect)).
 		WithArgs(uint32(42), tokenHash[:], now.Unix()).
 		WillReturnRows(sqlmock.NewRows([]string{"expires_at"}).AddRow(expiresAt))
-	mock.ExpectExec("UPDATE account_trusted_devices").
+	mock.ExpectExec(regexp.QuoteMeta(gameDeviceUpdate)).
 		WithArgs(sqlmock.AnyArg(), now.Unix(), uint32(42), tokenHash[:], now.Unix()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
 
 	verification, err := (&Account{ID: 42, Type: 1}).VerifyLoginSecondFactor(
 		context.Background(), db, "", token, "")
@@ -102,6 +105,45 @@ func TestVerifyAuthenticatorAcceptsUnusedTokenAndResetsFailures(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestVerifyLoginSecondFactorKeepsTOTPWhenDeviceTrustIsDenied(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		mode string
+		err  error
+	}{
+		{name: "disabled devices", mode: "disabled"},
+		{name: "policy storage unavailable", err: errors.New("policy storage unavailable")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, mock := newAuthenticatorMock(t)
+			now := time.Unix(3_000, 0)
+			previousNow := authenticatorNow
+			authenticatorNow = func() time.Time { return now }
+			t.Cleanup(func() { authenticatorNow = previousNow })
+			key := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef0123456789abcdef"))
+			secret := "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
+			envelope, err := authenticator.EncryptSecret(secret, key, 42, []byte("0123456789ab"))
+			require.NoError(t, err)
+			code, err := authenticator.TokenAtTime(secret, now.Unix())
+			require.NoError(t, err)
+			mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).
+				WillReturnRows(authenticatorRow(envelope, nil, 0))
+			expectGameDevicePolicy(mock, tc.mode, tc.err)
+			mock.ExpectRollback()
+			mock.ExpectExec("UPDATE account_authenticators").
+				WithArgs(int64(100), uint32(42), now.Unix(), int64(100)).
+				WillReturnResult(sqlmock.NewResult(0, 1))
+			verification, err := (&Account{ID: 42, Type: 1}).VerifyLoginSecondFactor(
+				context.Background(), db, code, base64.RawURLEncoding.EncodeToString(make([]byte, 32)), key)
+			require.NoError(t, err)
+			assert.True(t, verification.VerifiedWithAuthenticator)
+			assert.Empty(t, verification.TrustedDeviceToken)
+			assert.Zero(t, verification.TrustedDeviceExpiresAt)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
 }
 
 func TestVerifyAuthenticatorRejectsReplay(t *testing.T) {

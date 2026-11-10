@@ -88,7 +88,14 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 			errors.New("database connection is nil"),
 		)
 	}
+	return acc.createSession(ctx, db)
+}
 
+type accountSessionWriter interface {
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+}
+
+func (acc *Account) createSession(ctx context.Context, writer accountSessionWriter) (string, error) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
 		return "", serviceerrors.LoginService(
@@ -109,7 +116,7 @@ func (acc *Account) CreateSession(ctx context.Context, db *sql.DB) (string, erro
 	writeCtx, cancel := context.WithTimeout(ctx, sessionPersistenceTimeout)
 	defer cancel()
 
-	if _, err := db.ExecContext(
+	if _, err := writer.ExecContext(
 		writeCtx,
 		"INSERT INTO `account_sessions` (`id`, `account_id`, `expires`) VALUES (?, ?, ?)",
 		fmt.Sprintf("%x", hash),

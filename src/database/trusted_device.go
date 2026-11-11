@@ -25,7 +25,8 @@ const (
 var trustedDeviceNow = time.Now
 
 // Both website policy updates and game credentials lock the account first.
-// Missing policy rows preserve approved devices but never enroll a new one.
+// Accounts that never saved a policy keep the original behavior: a fresh second
+// factor may enroll a remembered device. Owners restrict it on the website.
 func lockGameDevicePolicy(ctx context.Context, tx *sql.Tx, accountID uint32) (string, error) {
 	var lockedAccountID uint32
 	if err := tx.QueryRowContext(ctx, `SELECT id FROM accounts WHERE id = ? FOR UPDATE`, accountID).Scan(&lockedAccountID); err != nil {
@@ -34,7 +35,7 @@ func lockGameDevicePolicy(ctx context.Context, tx *sql.Tx, accountID uint32) (st
 	var mode string
 	err := tx.QueryRowContext(ctx, `SELECT game_mode FROM account_device_policies WHERE account_id = ?`, accountID).Scan(&mode)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "locked", nil
+		return "open", nil
 	}
 	return mode, err
 }

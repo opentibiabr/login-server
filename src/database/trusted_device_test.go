@@ -164,7 +164,6 @@ func TestIssueTrustedDevicePolicyDeniesEnrollment(t *testing.T) {
 	}{
 		{name: "locked", mode: "locked"},
 		{name: "disabled", mode: "disabled"},
-		{name: "missing row defaults locked", err: sql.ErrNoRows},
 		{name: "unknown mode", mode: "unexpected"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -178,6 +177,61 @@ func TestIssueTrustedDevicePolicyDeniesEnrollment(t *testing.T) {
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+}
+
+func TestIssueTrustedDeviceWithoutSavedPolicyEnrolls(t *testing.T) {
+	db, mock := newAuthenticatorMock(t)
+	now := time.Unix(10_000, 0)
+	previousNow := trustedDeviceNow
+	trustedDeviceNow = func() time.Time { return now }
+	t.Cleanup(func() { trustedDeviceNow = previousNow })
+	storedHash := &recordedDeviceHash{}
+
+	expectGameDevicePolicy(mock, "", sql.ErrNoRows)
+	mock.ExpectExec(`DELETE FROM account_trusted_devices\s+WHERE account_id = \? AND purpose = 'game' AND expires_at <= \?`).
+		WithArgs(uint32(42), now.Unix()).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`DELETE FROM account_trusted_devices\s+WHERE account_id = \? AND purpose = 'game' AND id NOT IN`).
+		WithArgs(uint32(42), uint32(42), trustedDeviceMaxCount-1).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`INSERT INTO account_trusted_devices`).
+		WithArgs(uint32(42), storedHash, "OTClient", now.Unix(), now.Unix(), now.Add(trustedDeviceDuration).Unix()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	token, expiry, err := (&Account{ID: 42}).IssueTrustedDevice(context.Background(), db, "")
+
+	require.NoError(t, err)
+	assert.NotEmpty(t, token)
+	assert.Equal(t, uint64(now.Add(trustedDeviceDuration).Unix()), expiry)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRotateTrustedDeviceWithoutSavedPolicyAcceptsApprovedDevice(t *testing.T) {
+	db, mock := newAuthenticatorMock(t)
+	now := time.Unix(10_000, 0)
+	previousNow := trustedDeviceNow
+	trustedDeviceNow = func() time.Time { return now }
+	t.Cleanup(func() { trustedDeviceNow = previousNow })
+
+	raw := []byte("0123456789abcdef0123456789abcdef")
+	tokenHash := sha256.Sum256(raw)
+	expiresAt := uint64(now.Add(24 * time.Hour).Unix())
+	expectGameDevicePolicy(mock, "", sql.ErrNoRows)
+	mock.ExpectQuery(regexp.QuoteMeta(gameDeviceSelect)).
+		WithArgs(uint32(42), tokenHash[:], now.Unix()).
+		WillReturnRows(sqlmock.NewRows([]string{"expires_at"}).AddRow(expiresAt))
+	mock.ExpectExec(regexp.QuoteMeta(gameDeviceUpdate)).
+		WithArgs(sqlmock.AnyArg(), now.Unix(), uint32(42), tokenHash[:], now.Unix()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	replacement, _, valid, err := (&Account{ID: 42}).RotateTrustedDevice(context.Background(), db, base64.RawURLEncoding.EncodeToString(raw))
+
+	require.NoError(t, err)
+	assert.NotEmpty(t, replacement)
+	assert.True(t, valid)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestTrustedDevicePolicyUnavailableFailsClosed(t *testing.T) {

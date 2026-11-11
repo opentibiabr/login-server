@@ -3,16 +3,22 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/opentibiabr/login-server/src/api/models"
 	"github.com/opentibiabr/login-server/src/configs"
@@ -608,4 +614,109 @@ func Test_loginHandlerRejectsPasswordAuthenticationMode(t *testing.T) {
 	err = json.Unmarshal(recorder.Body.Bytes(), &payload)
 	require.NoError(t, err)
 	assert.Equal(t, serviceerrors.CodeSessionAuthenticationRequired, payload.ErrorCode)
+}
+
+func TestLoginHandlerTellsAuthenticatorChallengeWhetherDeviceMayBeRemembered(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	configPath := filepath.Join(t.TempDir(), "config.lua")
+	require.NoError(t, os.WriteFile(configPath, []byte("authType = \"session\"\n"), 0o600))
+	manager, err := configs.NewLuaConfigManager(configPath)
+	require.NoError(t, err)
+	passwordHash := fmt.Sprintf("%x", sha1.Sum([]byte("password123")))
+	const authenticate = `SELECT id, type, premdays, lastday FROM accounts WHERE (email = ? OR name = ?) AND password = ?`
+	const policy = `SELECT game_mode FROM account_device_policies WHERE account_id = ?`
+
+	for _, test := range []struct {
+		name       string
+		url        string
+		errorCode  uint32
+		expect     func(sqlmock.Sqlmock)
+		wantField  bool
+		wantAllows bool
+	}{
+		{
+			name: "open policy", url: "https://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect: func(mock sqlmock.Sqlmock) {
+				expectChallengeAccount(mock, authenticate, passwordHash)
+				mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42)).WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow("open"))
+			},
+			wantField: true, wantAllows: true,
+		},
+		{
+			name: "account without a saved policy", url: "https://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect: func(mock sqlmock.Sqlmock) {
+				expectChallengeAccount(mock, authenticate, passwordHash)
+				mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42)).WillReturnError(sql.ErrNoRows)
+			},
+			wantField: true, wantAllows: true,
+		},
+		{
+			name: "locked policy", url: "https://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect: func(mock sqlmock.Sqlmock) {
+				expectChallengeAccount(mock, authenticate, passwordHash)
+				mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42)).WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow("locked"))
+			},
+			wantField: true, wantAllows: false,
+		},
+		{
+			name: "disabled policy", url: "https://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect: func(mock sqlmock.Sqlmock) {
+				expectChallengeAccount(mock, authenticate, passwordHash)
+				mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42)).WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow("disabled"))
+			},
+			wantField: true, wantAllows: false,
+		},
+		{
+			name: "plain HTTP can never remember a device", url: "http://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect:    func(sqlmock.Sqlmock) {},
+			wantField: true, wantAllows: false,
+		},
+		{
+			name: "policy lookup failure leaves the answer out", url: "https://login.example/login", errorCode: serviceerrors.CodeAuthenticatorRequired,
+			expect: func(mock sqlmock.Sqlmock) {
+				expectChallengeAccount(mock, authenticate, passwordHash)
+				mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42)).WillReturnError(errors.New("policy storage unavailable"))
+			},
+			wantField: false,
+		},
+		{
+			name: "unrelated error is not annotated", url: "https://login.example/login", errorCode: serviceerrors.CodeInvalidCredentials,
+			expect:    func(sqlmock.Sqlmock) {},
+			wantField: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = db.Close() })
+			test.expect(mock)
+			connection, _ := newInMemoryLoginClient(t, &login_proto_messages.LoginResponse{
+				Error: &login_proto_messages.Error{Code: test.errorCode, Message: "challenge"},
+			})
+			router := gin.New()
+			router.POST("/login", (&Api{DB: db, GrpcConnection: connection, LuaConfigManager: manager}).login)
+			body, err := json.Marshal(models.RequestPayload{Type: "login", Email: "user@example.com", Password: "password123", TrustDevice: true})
+			require.NoError(t, err)
+			recorder := httptest.NewRecorder()
+
+			router.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, test.url, bytes.NewBuffer(body)))
+
+			assert.Equal(t, http.StatusOK, recorder.Code)
+			var response map[string]interface{}
+			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+			assert.Equal(t, float64(test.errorCode), response["errorCode"])
+			if test.wantField {
+				assert.Equal(t, test.wantAllows, response["trustdeviceallowed"])
+			} else {
+				assert.NotContains(t, response, "trustdeviceallowed")
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func expectChallengeAccount(mock sqlmock.Sqlmock, authenticate string, passwordHash string) {
+	mock.ExpectQuery(regexp.QuoteMeta(authenticate)).
+		WithArgs("user@example.com", "user@example.com", passwordHash).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(uint32(42), uint32(1), uint32(0), uint32(0)))
 }

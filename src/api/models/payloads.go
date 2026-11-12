@@ -31,6 +31,10 @@ type ResponsePayload struct {
 type LoginErrorPayload struct {
 	ErrorCode    int    `json:"errorCode"`
 	ErrorMessage string `json:"errorMessage"`
+	// TrustDeviceAllowed is set only on an authenticator challenge, when the
+	// server knows whether this login may remember the device. Clients that do
+	// not read it keep offering the option.
+	TrustDeviceAllowed *bool `json:"trustdeviceallowed,omitempty"`
 }
 
 type PlayData struct {

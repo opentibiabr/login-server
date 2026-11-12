@@ -132,7 +132,11 @@ func (_api *Api) login(c *gin.Context) {
 		}
 
 		if res.GetError() != nil {
-			c.JSON(http.StatusOK, buildErrorPayloadFromMessage(res))
+			errorPayload := buildErrorPayloadFromMessage(res)
+			if res.GetError().GetCode() == uint32(serviceerrors.CodeAuthenticatorRequired) {
+				errorPayload.TrustDeviceAllowed = _api.trustDeviceAllowed(c.Request.Context(), payload, secureLoginRequest)
+			}
+			c.JSON(http.StatusOK, errorPayload)
 			return
 		}
 
@@ -149,6 +153,26 @@ func (_api *Api) login(c *gin.Context) {
 			fmt.Errorf("unsupported login request type %q", payload.Type),
 		))
 	}
+}
+
+// trustDeviceAllowed answers an authenticator challenge with whether this login
+// could remember the device. A plain HTTP request never can, because the
+// credentials are dropped before the login service. An unknown answer (no
+// database, or the lookup failed) returns nil and is left out of the response.
+func (api *Api) trustDeviceAllowed(ctx context.Context, payload models.RequestPayload, secureLoginRequest bool) *bool {
+	allowed := false
+	if secureLoginRequest {
+		if api == nil || api.DB == nil {
+			return nil
+		}
+		account := database.Account{Email: payload.Email, Password: payload.Password}
+		var err error
+		allowed, err = account.GameDeviceEnrollmentAllowed(ctx, api.DB)
+		if err != nil {
+			return nil
+		}
+	}
+	return &allowed
 }
 
 func (api *Api) hasIncompatibleAuthType() bool {

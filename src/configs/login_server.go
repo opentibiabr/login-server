@@ -21,6 +21,7 @@ type LoginServerConfigs struct {
 	Grpc          GrpcLoginConfigs
 	RateLimiter   RateLimiter
 	Authenticator AuthenticatorConfigs
+	TestGodLogin  TestGodLoginConfigs
 	Config
 }
 
@@ -61,6 +62,7 @@ func GetLoginServerConfigs() LoginServerConfigs {
 		Grpc:          getGrpcLoginConfigs(),
 		RateLimiter:   GetRateLimiterConfigs(),
 		Authenticator: getAuthenticatorConfigs(),
+		TestGodLogin:  getTestGodLoginConfigs(),
 	}
 }
 

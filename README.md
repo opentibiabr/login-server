@@ -83,6 +83,34 @@ seconds, including slow bodies that begin while capacity is available.
 
 The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher must enroll before they can log in; enrollment remains optional for other accounts.
 
+An optional test-only login policy exempts the exact GOD account type `6` from
+enrollment and TOTP challenges, including already enrolled GOD accounts. It is
+disabled unless `REDOT_TEST_GOD_LOGIN_WITHOUT_2FA=true` and
+`REDOT_ENVIRONMENT=test`. Set every deployment binding below to its actual
+configured value:
+
+| Exemption binding | Must match |
+| :--- | :--- |
+| `REDOT_TEST_GOD_LOGIN_DB_HOST` | `MYSQL_HOST` |
+| `REDOT_TEST_GOD_LOGIN_DB_PORT` | parsed `MYSQL_PORT` |
+| `REDOT_TEST_GOD_LOGIN_DB_NAME` | `MYSQL_DBNAME` |
+| `REDOT_TEST_GOD_LOGIN_DB_USER` | `MYSQL_USER` |
+| `REDOT_TEST_GOD_LOGIN_SERVER_PATH` | absolute, clean `SERVER_PATH` |
+| `REDOT_TEST_GOD_LOGIN_GAME_PORT` | parsed `SERVER_PORT` |
+| `REDOT_TEST_GOD_LOGIN_HTTP_PORT` | parsed `LOGIN_HTTP_PORT` |
+
+Missing or mismatching bindings, non-test environments, and flag values other
+than empty, `false`, or `true` reject startup before either HTTP or gRPC service
+is initialized. Port bindings use decimal integers without padding. Keep this
+opt-in in the test deployment's administrator-managed environment; verify the
+physical server path and database destination before enabling it. Disabling the
+flag restores the ordinary policy without deleting enrollment data.
+
+The exemption affects login only. Password authentication and session creation
+remain required; account privileges, other account types, and website step-up
+requirements are unchanged. Exempt logins do not count as TOTP verification and
+cannot issue trusted-device credentials.
+
 The account website owns enrollment and stores the secret only after the player confirms the first code. The website and login server must use the same `AUTHENTICATOR_ENCRYPTION_KEY`. Generate it once with `openssl rand -base64 32`, store it outside the database, and do not rotate it without re-encrypting enrolled secrets.
 
 The game server must run with `authType = "session"`. The login API refuses an explicit password-authentication configuration because returning `email\npassword` would let direct game-server logins bypass the authenticator.

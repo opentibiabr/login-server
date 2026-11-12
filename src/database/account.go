@@ -29,6 +29,7 @@ type Account struct {
 }
 
 const accountTypeGameMaster = 4
+const accountTypeGod = 6
 const secondsInADay = 24 * 60 * 60
 const sessionDuration = 24 * time.Hour
 const sessionPersistenceTimeout = 3 * time.Second

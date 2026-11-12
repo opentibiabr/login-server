@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/opentibiabr/login-server/src/authenticator"
+	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
@@ -36,6 +37,12 @@ type SecondFactorVerification struct {
 }
 
 func (acc *Account) VerifyLoginSecondFactor(ctx context.Context, db *sql.DB, token, trustedDeviceToken, encodedKey string) (SecondFactorVerification, error) {
+	return acc.VerifyLoginSecondFactorWithPolicy(ctx, db, token, trustedDeviceToken, encodedKey, configs.TestGodLoginPolicy{})
+}
+
+// VerifyLoginSecondFactorWithPolicy permits a validated test-only exemption for
+// the exact Canary GOD account type. It never records a TOTP or trusted device.
+func (acc *Account) VerifyLoginSecondFactorWithPolicy(ctx context.Context, db *sql.DB, token, trustedDeviceToken, encodedKey string, policy configs.TestGodLoginPolicy) (SecondFactorVerification, error) {
 	verification := SecondFactorVerification{}
 	if acc == nil || db == nil {
 		return verification, serviceerrors.LoginService(
@@ -43,6 +50,9 @@ func (acc *Account) VerifyLoginSecondFactor(ctx context.Context, db *sql.DB, tok
 			"AUTHENTICATOR_DATA_UNAVAILABLE",
 			errors.New("account or database connection is nil"),
 		)
+	}
+	if policy.Enabled() && acc.Type == accountTypeGod {
+		return verification, nil
 	}
 	if ctx == nil {
 		ctx = context.Background()

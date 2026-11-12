@@ -12,13 +12,9 @@ import (
 	"github.com/opentibiabr/login-server/src/server"
 )
 
-var numberOfServers = 2
 var initDelay = 200
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(numberOfServers)
-
 	err := configs.Init()
 	logger.Init(configs.GetLogLevel(), configs.GetLogFile())
 	logger.Info("Welcome to OTBR Login Server")
@@ -29,15 +25,40 @@ func main() {
 
 	gConfigs := configs.GetGlobalConfigs()
 
-	go startServer(&wg, gConfigs, grpc_login_server.Initialize(gConfigs))
-	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
+	err = runServers(gConfigs,
+		func(config configs.GlobalConfigs) server.ServerInterface { return grpc_login_server.Initialize(config) },
+		func(config configs.GlobalConfigs) server.ServerInterface { return api.Initialize(config) },
+		time.Duration(initDelay)*time.Millisecond,
+	)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	logger.Info("Good bye...")
+}
 
-	time.Sleep(time.Duration(initDelay) * time.Millisecond)
+func runServers(
+	gConfigs configs.GlobalConfigs,
+	initializeGrpc, initializeAPI func(configs.GlobalConfigs) server.ServerInterface,
+	startupDelay time.Duration,
+) error {
+	// Validate before either initializer can create a database connection or proxy.
+	if _, err := configs.NewTestGodLoginPolicy(gConfigs, configs.GetEnvStr(configs.EnvServerPathKey)); err != nil {
+		return err
+	}
+	initializers := []func(configs.GlobalConfigs) server.ServerInterface{initializeGrpc, initializeAPI}
+	var wg sync.WaitGroup
+	wg.Add(len(initializers))
+	for _, initialize := range initializers {
+		go startServer(&wg, gConfigs, initialize(gConfigs))
+	}
+
+	time.Sleep(startupDelay)
 	gConfigs.Display()
 
 	// wait until WaitGroup is done
 	wg.Wait()
-	logger.Info("Good bye...")
+	return nil
 }
 
 func startServer(

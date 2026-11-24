@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -13,6 +14,7 @@ const EnvLoginIpKey = "LOGIN_IP"
 const EnvLoginHttpPortKey = "LOGIN_HTTP_PORT"
 const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
 const EnvLoginTrustedProxiesKey = "LOGIN_TRUSTED_PROXIES"
+const EnvLoginFreePremiumKey = "LOGIN_FREE_PREMIUM"
 
 const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
 const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
@@ -65,6 +67,13 @@ func GetLoginServerConfigs() LoginServerConfigs {
 		RateLimiter:   GetRateLimiterConfigs(),
 		Authenticator: getAuthenticatorConfigs(),
 	}
+}
+
+// GetLoginFreePremium reports whether accounts without paid time are shown as free premium accounts in the client
+// (LOGIN_FREE_PREMIUM=true, matching freePremium in the game server config). Unset or invalid means false.
+func GetLoginFreePremium() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(GetEnvStr(EnvLoginFreePremiumKey, "")))
+	return err == nil && enabled
 }
 
 func getAuthenticatorConfigs() AuthenticatorConfigs {

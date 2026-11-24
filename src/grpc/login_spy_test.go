@@ -35,6 +35,8 @@ func ownedCharacterRows() *sqlmock.Rows {
 func spyLoginFixture(t *testing.T, accountType uint32, owned *sqlmock.Rows, verified bool) (*GrpcServer, sqlmock.Sqlmock, *login_proto_messages.LoginRequest) {
 	t.Helper()
 	t.Setenv("SERVER_PATH", "")
+	// The assertions below expect a plain free account, whatever the environment running the tests sets.
+	t.Setenv("LOGIN_FREE_PREMIUM", "")
 	t.Setenv("SERVER_NAME", "Spy login fixture")
 	t.Setenv("SERVER_IP", "127.0.0.1")
 	t.Setenv("SERVER_PORT", "7172")

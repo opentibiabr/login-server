@@ -78,7 +78,7 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 			Characters: characters,
 			Worlds:     models.BuildWorldsMessage(configs.GetGameServerConfigs()),
 		},
-		Session:                acc.GetGrpcSession(sessionKey),
+		Session:                acc.GetGrpcSession(sessionKey, configs.GetLoginFreePremium()),
 		TrustedDeviceToken:     verification.TrustedDeviceToken,
 		TrustedDeviceExpiresAt: verification.TrustedDeviceExpiresAt,
 	}

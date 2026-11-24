@@ -48,6 +48,7 @@ You can also download our docker image and apply the environment variables to yo
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
 |`LOGIN_GRPC_PORT`    | `login grpc port`                    |
+|`LOGIN_FREE_PREMIUM` | `true` (or `1`, `t`, `True`: any value Go's `strconv.ParseBool` reads as true) shows an account without paid time as a free premium account in the client character list; use it when the game server runs with freePremium. Unset, empty or any other value shows it as a free account. An account with paid time (`accounts.lastday` in the future) shows its whole days left, rounded down and never less than one while any paid time is left|
 |`LOGIN_TRUSTED_PROXIES`|`comma-separated IP/CIDR allowlist of reverse proxies permitted to supply forwarding headers; empty by default`|
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|

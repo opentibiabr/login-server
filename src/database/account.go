@@ -60,10 +60,15 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 	return nil
 }
 
-func (acc *Account) GetGrpcSession(sessionKey string) *login_proto_messages.Session {
+// GetGrpcSession builds the session the client shows in its character list. The premium state comes from `lastday`, the
+// moment the paid time ends, which is what the game server and the website read. The `premdays` column is only a
+// cache of the days left that nothing refreshes when the time expires, so it is not used for the account status.
+// When freePremium is true, an account without paid time is shown as a free premium account instead of a free one.
+func (acc *Account) GetGrpcSession(sessionKey string, freePremium bool) *login_proto_messages.Session {
+	isPremium, premiumUntil := acc.PremiumStatus(time.Now(), freePremium)
 	return &login_proto_messages.Session{
-		IsPremium:    acc.PremDays > 0,
-		PremiumUntil: acc.GetPremiumTime(),
+		IsPremium:    isPremium,
+		PremiumUntil: premiumUntil,
 		SessionKey:   sessionKey,
 		LastLogin:    acc.LastLogin,
 	}
@@ -140,11 +145,32 @@ func (acc *Account) createSession(ctx context.Context, writer accountSessionWrit
 	return sessionKey, nil
 }
 
-func (acc *Account) GetPremiumTime() uint64 {
-	if acc.PremDays > 0 {
-		return uint64(time.Now().Unix()) + uint64(acc.PremDays*secondsInADay)
+// The client turns premiumuntil into whole days, floor((premiumuntil - now) / 86400), and treats exactly 65535 days as
+// "free premium". The extra half day keeps that count at 65535 while the client clock is less than half a day behind or
+// at most half a day ahead of the login server clock (it shows 65536 or 65534 days outside that window).
+const freePremiumDays = 65535
+const freePremiumSeconds = freePremiumDays*secondsInADay + secondsInADay/2
+
+// With less than a day (plus the margin for latency) of paid time left the client would count 0 days and print the free
+// days text, as if the paid time had already ended, and its expiry highlight would turn off on the day it matters most.
+// While less than a day and a half is left, report a day and a half instead, so the client shows one day left.
+const minimumPaidSeconds = secondsInADay + secondsInADay/2
+
+// PremiumStatus returns whether the account is premium and until when, for the client. An account with paid time
+// (`lastday` in the future) reports that moment, so the client shows the whole days left (rounded down, like Canary's
+// remaining days), and at least one day while any paid time is left. Without paid time it reports the free premium
+// value when freePremium is true, and no premium otherwise.
+func (acc *Account) PremiumStatus(now time.Time, freePremium bool) (bool, uint64) {
+	if remaining := int64(acc.LastDay) - now.Unix(); remaining > 0 {
+		if remaining < minimumPaidSeconds {
+			return true, uint64(now.Unix()) + minimumPaidSeconds
+		}
+		return true, uint64(acc.LastDay)
 	}
-	return 0
+	if freePremium {
+		return true, uint64(now.Unix()) + freePremiumSeconds
+	}
+	return false, 0
 }
 
 func LoadAccount(email string, password string, DB *sql.DB) (*Account, error) {

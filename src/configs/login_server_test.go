@@ -310,3 +310,30 @@ func TestGrpcLoginConfigs_Format(t *testing.T) {
 		})
 	}
 }
+
+func TestGetLoginFreePremium(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		set   bool
+		want  bool
+	}{
+		{name: "unset means off", set: false, want: false},
+		{name: "true", value: "true", set: true, want: true},
+		{name: "one", value: "1", set: true, want: true},
+		{name: "true with spaces and capitals", value: " True ", set: true, want: true},
+		{name: "false", value: "false", set: true, want: false},
+		{name: "empty", value: "", set: true, want: false},
+		{name: "not a boolean means off", value: "yes please", set: true, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// t.Setenv registers the restore of the original value, then an unset case really unsets it.
+			t.Setenv(EnvLoginFreePremiumKey, tt.value)
+			if !tt.set {
+				os.Unsetenv(EnvLoginFreePremiumKey)
+			}
+			assert.Equal(t, tt.want, GetLoginFreePremium())
+		})
+	}
+}

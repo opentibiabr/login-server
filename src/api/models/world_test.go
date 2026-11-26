@@ -1,9 +1,11 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/opentibiabr/login-server/src/configs"
@@ -81,7 +83,33 @@ func TestBuildWorldsMessage(t *testing.T) {
 	}
 }
 
+func TestLoadWorldsFromMessageCarriesTheConfiguredPvpType(t *testing.T) {
+	t.Setenv(configs.EnvServerPathKey, "")
+	t.Setenv(configs.EnvServerPvpTypeKey, "retro-pvp")
+
+	worlds := LoadWorldsFromMessage([]*login_proto_messages.World{createWorldMessage(1), createWorldMessage(5)})
+
+	if len(worlds) != 2 {
+		t.Fatalf("expected 2 worlds, got %d", len(worlds))
+	}
+	for _, world := range worlds {
+		if world.PvpType != configs.PvpTypeRetroOpen {
+			t.Errorf("world %d pvptype = %d, want %d", world.ID, world.PvpType, configs.PvpTypeRetroOpen)
+		}
+	}
+	encoded, err := json.Marshal(worlds[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(encoded), `"pvptype":3`) {
+		t.Errorf("the JSON must carry pvptype 3: %s", encoded)
+	}
+}
+
 func TestLoadWorldsFromMessage(t *testing.T) {
+	// No PvP type configured: the expectations below are open PvP (0) whatever the environment sets.
+	t.Setenv(configs.EnvServerPathKey, "")
+	t.Setenv(configs.EnvServerPvpTypeKey, "")
 	type args struct {
 		worldsMsg []*login_proto_messages.World
 	}

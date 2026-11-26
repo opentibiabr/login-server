@@ -2,9 +2,7 @@ package grpc_login_server
 
 import (
 	"context"
-	"crypto/sha1"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -23,9 +21,7 @@ func TestLoginRefusesStaffCharacterOwnerWithoutAuthenticator(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	in := &login_proto_messages.LoginRequest{Email: "staff@example.invalid", Password: "fixture-password"}
-	mock.ExpectQuery("SELECT id, type, premdays, lastday FROM accounts").
-		WithArgs(in.Email, in.Email, fmt.Sprintf("%x", sha1.Sum([]byte(in.Password)))).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(42, 1, 0, 0))
+	expectAccountCredentials(mock, in, 42, 1)
 	mock.ExpectQuery(`SELECT id, name, level, sex, vocation`).
 		WillReturnRows(ownedCharacterRows().AddRow(5004, "Staff Character", 100, 1, 4, 128, 1, 2, 3, 4, 0, 123))
 	mock.ExpectQuery("SELECT secret_encrypted, last_used_step, blocked_until FROM account_authenticators").

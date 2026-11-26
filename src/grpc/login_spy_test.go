@@ -23,8 +23,18 @@ import (
 const loginSpyTargetQuery = `SELECT p.name, p.level, p.sex, p.vocation, p.looktype, p.lookhead, p.lookbody, p.looklegs, p.lookfeet, p.lookaddons, p.lastlogin FROM account_livestream_spy_targets st INNER JOIN players p ON p.id = st.target_id INNER JOIN accounts a ON a.id = st.account_id WHERE st.account_id = \? AND a.type = 6 AND p.deletion = 0 AND NOT EXISTS \( SELECT 1 FROM players owned WHERE owned.account_id = st.account_id AND owned.name = CONCAT\('Spy: ', p.name\) \) ORDER BY p.name ASC LIMIT 64`
 const spyFixtureTrustedExpiry = uint64(4102444800)
 
+// expectAccountCredentials answers the credential lookup with one account whose stored value is the legacy SHA-1 of
+// the password in the request.
+func expectAccountCredentials(mock sqlmock.Sqlmock, in *login_proto_messages.LoginRequest, accountID, accountType uint32) {
+	mock.ExpectQuery("SELECT id, type, premdays, lastday, password FROM accounts").
+		WithArgs(in.Email, in.Email, in.Email).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday", "password"}).
+			AddRow(accountID, accountType, 0, 0, fmt.Sprintf("%x", sha1.Sum([]byte(in.Password)))))
+}
+
 // All persistence and second-factor calls use sqlmock. No listener or real DB
 // is initialized; Login is invoked directly with an isolated account fixture.
+
 // ownedCharacterRows returns rows for the account's own characters: the stable id first, then the
 // columns shared with the livestream queries. Spy targets keep using livestreamCasterColumns alone,
 // because their virtual entries carry no character id.
@@ -46,10 +56,7 @@ func spyLoginFixture(t *testing.T, accountType uint32, owned *sqlmock.Rows, veri
 	t.Cleanup(func() { db.Close() })
 
 	in := &login_proto_messages.LoginRequest{Email: "god@example.invalid", Password: "fixture-password"}
-	passwordHash := sha1.Sum([]byte(in.Password))
-	mock.ExpectQuery("SELECT id, type, premdays, lastday FROM accounts").
-		WithArgs(in.Email, in.Email, fmt.Sprintf("%x", passwordHash)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(42, accountType, 0, 0))
+	expectAccountCredentials(mock, in, 42, accountType)
 	mock.ExpectQuery(`SELECT id, name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons, lastlogin from players where account_id = "42"`).
 		WillReturnRows(owned).RowsWillBeClosed()
 	mock.ExpectQuery("SELECT secret_encrypted, last_used_step, blocked_until FROM account_authenticators").

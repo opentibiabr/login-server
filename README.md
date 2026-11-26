@@ -82,6 +82,31 @@ seconds, including slow bodies that begin while capacity is available.
 **Build**  
 `RUN go build -o TARGET_NAME ./src/`
 
+## Account passwords
+
+`accounts.password` is read by its own format, so accounts in different formats work side by side:
+
+| Stored value | Meaning |
+|---|---|
+| `$argon2id$v=19$m=65536,t=3,p=1$<salt>$<hash>` | Argon2id of the password, as written by PHP `password_hash` or libargon2. The parameters are read from the value (limits: `m` up to 262144 KiB, `t` and `p` up to 16) |
+| `sha1:$argon2id$...` | Argon2id of the lowercase hexadecimal SHA-1 of the password: a former SHA-1 value wrapped without knowing the password |
+| 40 hexadecimal characters | Legacy SHA-1 of the password |
+
+|NAME|HINT|
+|---|---|
+|`LOGIN_PASSWORD_REHASH`| `true` replaces a SHA-1, wrapped or weaker Argon2id value (less memory, or the same memory and fewer passes) with `m=65536,t=3,p=1` after a successful password check. Default `false`. A failed update is logged and does not fail the login. Nothing is written while `accounts.password` holds fewer than 128 characters |
+|`LOGIN_PASSWORD_HASH_CONCURRENCY`| Argon2id computations that may run at once (1 to 64, default 2). A login that cannot get a slot within 10 seconds answers `PASSWORD_VERIFICATION_BUSY` (LS-3005), which is not a credentials error |
+
+Memory: each computation uses the `m` of the value it checks (64 MiB for the values written here). It is released before the slot is handed over, but the runtime does not return it at once: plan for that amount per slot and one more. On a service limited to 256 MiB, set the concurrency to 1, and keep stored values at `m=65536`. One request computes Argon2id for at most 8 accounts sharing the same email or name. One computation takes on the order of 100 ms of one CPU core.
+
+Enable `LOGIN_PASSWORD_REHASH` only when everything else that reads `accounts.password` accepts Argon2id (the game server, when it runs with `authType = "password"` or the old protocol, and the account website), and give the login-server database user `UPDATE` on that column:
+
+```sql
+GRANT UPDATE (`password`) ON `canary`.`accounts` TO 'login'@'localhost';
+```
+
+After values have been rewritten, do not roll back to a version that only reads SHA-1: those accounts could not log in.
+
 ## Two-factor authentication
 
 The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher, and accounts that own a character that is not deleted with `players.group_id` 4 or higher, must enroll before they can log in; enrollment remains optional for other accounts. For an account without an authenticator, a failure to read its characters' groups refuses the login.

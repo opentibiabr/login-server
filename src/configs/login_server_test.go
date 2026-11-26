@@ -337,3 +337,17 @@ func TestGetLoginFreePremium(t *testing.T) {
 		})
 	}
 }
+
+func TestGetLoginPasswordRehashIsOffUnlessEnabled(t *testing.T) {
+	for value, want := range map[string]bool{"": false, "false": false, "yes": false, "true": true, " TRUE ": true, "1": true} {
+		t.Setenv(EnvLoginPasswordRehashKey, value)
+		assert.Equal(t, want, GetLoginPasswordRehash(), "%q", value)
+	}
+}
+
+func TestGetLoginPasswordHashConcurrency(t *testing.T) {
+	for value, want := range map[string]int{"": 2, "0": 2, "-1": 2, "many": 2, "65": 2, "1": 1, "8": 8, "64": 64} {
+		t.Setenv(EnvLoginPasswordHashConcurrencyKey, value)
+		assert.Equal(t, want, GetLoginPasswordHashConcurrency(), "%q", value)
+	}
+}

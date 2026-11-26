@@ -19,4 +19,5 @@ func TestAdminHintInvalidCredentials(t *testing.T) {
 
 	assert.Contains(t, hint, "accounts.password")
 	assert.Contains(t, hint, "SHA-1")
+	assert.Contains(t, hint, "Argon2id")
 }

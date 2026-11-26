@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/opentibiabr/login-server/src/passwords"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 )
@@ -15,6 +16,10 @@ const EnvLoginHttpPortKey = "LOGIN_HTTP_PORT"
 const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
 const EnvLoginTrustedProxiesKey = "LOGIN_TRUSTED_PROXIES"
 const EnvLoginFreePremiumKey = "LOGIN_FREE_PREMIUM"
+const EnvLoginPasswordRehashKey = "LOGIN_PASSWORD_REHASH"
+const EnvLoginPasswordHashConcurrencyKey = "LOGIN_PASSWORD_HASH_CONCURRENCY"
+
+const maxPasswordHashConcurrency = 64
 
 const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
 const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
@@ -74,6 +79,24 @@ func GetLoginServerConfigs() LoginServerConfigs {
 func GetLoginFreePremium() bool {
 	enabled, err := strconv.ParseBool(strings.TrimSpace(GetEnvStr(EnvLoginFreePremiumKey, "")))
 	return err == nil && enabled
+}
+
+// GetLoginPasswordRehash reports whether a successful login replaces an older accounts.password value with Argon2id
+// (LOGIN_PASSWORD_REHASH=true). Unset or invalid means false: enable it only after the game server and the account
+// website accept Argon2id.
+func GetLoginPasswordRehash() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(GetEnvStr(EnvLoginPasswordRehashKey, "")))
+	return err == nil && enabled
+}
+
+// GetLoginPasswordHashConcurrency is how many Argon2id computations may run at once
+// (LOGIN_PASSWORD_HASH_CONCURRENCY). Unset or out of range means the default.
+func GetLoginPasswordHashConcurrency() int {
+	value, err := strconv.Atoi(strings.TrimSpace(GetEnvStr(EnvLoginPasswordHashConcurrencyKey, "")))
+	if err != nil || value < 1 || value > maxPasswordHashConcurrency {
+		return passwords.DefaultConcurrency
+	}
+	return value
 }
 
 func getAuthenticatorConfigs() AuthenticatorConfigs {

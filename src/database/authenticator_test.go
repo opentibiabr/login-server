@@ -20,13 +20,41 @@ import (
 const authenticatorSelect = `SELECT secret_encrypted, last_used_step, blocked_until
 		FROM account_authenticators WHERE account_id = ?`
 
+const staffCharacterSelect = `SELECT 1 FROM players
+		WHERE account_id = ? AND deletion = 0 AND group_id >= ? LIMIT 1`
+
 func TestVerifyAuthenticatorAllowsOptionalAccountWithoutEnrollment(t *testing.T) {
 	db, mock := newAuthenticatorMock(t)
 	mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).WillReturnError(sql.ErrNoRows)
+	expectStaffCharacterQuery(mock).WillReturnRows(sqlmock.NewRows([]string{"1"}))
 
 	err := (&Account{ID: 42, Type: 1}).VerifyAuthenticator(context.Background(), db, "", "")
 
 	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestVerifyAuthenticatorRequiresEnrollmentForOwnersOfStaffCharacters(t *testing.T) {
+	db, mock := newAuthenticatorMock(t)
+	mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).WillReturnError(sql.ErrNoRows)
+	expectStaffCharacterQuery(mock).WillReturnRows(sqlmock.NewRows([]string{"1"}).AddRow(1))
+
+	verification, err := (&Account{ID: 42, Type: 1}).VerifyLoginSecondFactor(
+		context.Background(), db, "123456", "device-token", "")
+
+	assertPublicError(t, err, serviceerrors.CodeStaffAuthenticatorRequired, "STAFF_AUTHENTICATOR_REQUIRED")
+	assert.Equal(t, SecondFactorVerification{}, verification)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestVerifyAuthenticatorRefusesLoginWhenStaffCharactersCannotBeChecked(t *testing.T) {
+	db, mock := newAuthenticatorMock(t)
+	mock.ExpectQuery(regexp.QuoteMeta(authenticatorSelect)).WithArgs(uint32(42)).WillReturnError(sql.ErrNoRows)
+	expectStaffCharacterQuery(mock).WillReturnError(errors.New("players unavailable"))
+
+	err := (&Account{ID: 42, Type: 1}).VerifyAuthenticator(context.Background(), db, "", "")
+
+	assertPublicError(t, err, serviceerrors.CodeAuthenticatorDataUnavailable, "AUTHENTICATOR_DATA_UNAVAILABLE")
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -209,6 +237,10 @@ func TestVerifyAuthenticatorRejectsBlockedAccountWithoutDecrypting(t *testing.T)
 
 	assertPublicError(t, err, serviceerrors.CodeAuthenticatorRequired, "AUTHENTICATOR_REQUIRED")
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func expectStaffCharacterQuery(mock sqlmock.Sqlmock) *sqlmock.ExpectedQuery {
+	return mock.ExpectQuery(regexp.QuoteMeta(staffCharacterSelect)).WithArgs(uint32(42), playerGroupGameMaster)
 }
 
 func newAuthenticatorMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {

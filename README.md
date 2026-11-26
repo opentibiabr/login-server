@@ -94,13 +94,13 @@ seconds, including slow bodies that begin while capacity is available.
 
 |NAME|HINT|
 |---|---|
-|`LOGIN_PASSWORD_REHASH`| `true` replaces a SHA-1, wrapped or weaker Argon2id value (less memory, or the same memory and fewer passes) with `m=65536,t=3,p=1` after a successful password check. Default `false`. A failed update is logged and does not fail the login. Nothing is written while `accounts.password` holds fewer than 128 characters |
+|`LOGIN_PASSWORD_REHASH`| `true` replaces a SHA-1, wrapped or weaker Argon2id value (less memory, or the same memory and fewer passes) with `m=65536,t=3,p=1` after a successful password check. Default `false`. A failed update is logged and does not fail the login. Nothing is written, and nothing is hashed, while `accounts.password` holds fewer than 128 characters (widen it first, see below) |
 |`LOGIN_PASSWORD_CHANGE_MESSAGE`| Message shown (error `PASSWORD_CHANGE_REQUIRED`, code 8) when the password is correct but `accounts.password_change_required` is `1`. Default: `You must change your account password on the website before you can play.` The check exists only when that column is present (detected once at startup); without it logins are unchanged. A wrong password still answers the normal invalid-credentials error, and no session, trusted-device token or password upgrade is issued for a flagged account |
 |`LOGIN_PASSWORD_HASH_CONCURRENCY`| Argon2id computations that may run at once (1 to 64, default 2). A login that cannot get a slot within 10 seconds answers `PASSWORD_VERIFICATION_BUSY` (LS-3005), which is not a credentials error |
 
 Memory: each computation uses the `m` of the value it checks (64 MiB for the values written here). It is released before the slot is handed over, but the runtime does not return it at once: plan for that amount per slot and one more. On a service limited to 256 MiB, set the concurrency to 1, and keep stored values at `m=65536`. One request computes Argon2id for at most 8 accounts sharing the same email or name. One computation takes on the order of 100 ms of one CPU core.
 
-Enable `LOGIN_PASSWORD_REHASH` only when everything else that reads `accounts.password` accepts Argon2id (the game server, when it runs with `authType = "password"` or the old protocol, and the account website), and give the login-server database user `UPDATE` on that column:
+Enable `LOGIN_PASSWORD_REHASH` only when everything else that reads `accounts.password` accepts Argon2id (the game server, when it runs with `authType = "password"` or the old protocol, and the account website), widen the column if it is narrower than 128 characters (for example `ALTER TABLE accounts MODIFY password VARCHAR(255) NOT NULL;`, keeping the column's own nullability and default), and give the login-server database user `UPDATE` on that column:
 
 ```sql
 GRANT UPDATE (`password`) ON `canary`.`accounts` TO 'login'@'localhost';

@@ -46,10 +46,14 @@ var passwordCheckTimeout = 10 * time.Second
 // Every account the identifier names is a candidate: the schema does not require unique emails.
 const selectCredentialsStatement = "SELECT id, type, premdays, lastday, password FROM accounts WHERE email = ? OR name = ? ORDER BY email = ? DESC, id"
 
-// The column width is part of the condition: without strict SQL mode a narrow column would silently cut the new value
-// and lock the account out.
+// passwordColumnWidthStatement reads the width of accounts.password. It is checked before hashing so a narrow column
+// costs one cheap query instead of an Argon2id computation that could never be stored.
+const passwordColumnWidthStatement = "SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'password'"
+
+// The column width stays part of the condition as the final guard: without strict SQL mode a narrow column would
+// silently cut the new value and lock the account out.
 const upgradePasswordStatement = "UPDATE accounts SET password = ? WHERE id = ? AND password = ? AND ? <= " +
-	"(SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'password')"
+	"(" + passwordColumnWidthStatement + ")"
 
 var defaultPasswordHasher = passwords.NewHasher(passwords.DefaultConcurrency, false)
 
@@ -174,6 +178,9 @@ func upgradeStoredPassword(ctx context.Context, db *sql.DB, hasher *passwords.Ha
 	upgradeCtx, cancel := context.WithTimeout(ctx, passwordUpgradeTimeout)
 	defer cancel()
 
+	if err := checkPasswordColumnWidth(upgradeCtx, db); err != nil {
+		return err
+	}
 	upgraded, err := hasher.Hash(upgradeCtx, password)
 	if err != nil {
 		return err
@@ -188,6 +195,17 @@ func upgradeStoredPassword(ctx context.Context, db *sql.DB, hasher *passwords.Ha
 	}
 	if changed != 1 {
 		return fmt.Errorf("not replaced: the value changed meanwhile or accounts.password holds fewer than %d characters", passwords.MinColumnLength)
+	}
+	return nil
+}
+
+func checkPasswordColumnWidth(ctx context.Context, db *sql.DB) error {
+	var width sql.NullInt64
+	if err := db.QueryRowContext(ctx, passwordColumnWidthStatement).Scan(&width); err != nil {
+		return fmt.Errorf("reading the width of accounts.password: %w", err)
+	}
+	if !width.Valid || width.Int64 < passwords.MinColumnLength {
+		return fmt.Errorf("accounts.password holds fewer than %d characters; widen it, for example ALTER TABLE accounts MODIFY password VARCHAR(255) NOT NULL", passwords.MinColumnLength)
 	}
 	return nil
 }

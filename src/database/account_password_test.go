@@ -21,6 +21,7 @@ const (
 	fixtureArgon2id   = "$argon2id$v=19$m=65536,t=3,p=1$L0toZHlaNFNHMlh1NTFEQg$UyY/BT/lQlf/EpFvNtJn/usQFi3APme7vimpMfJh2Fw"
 	fixtureWrapped    = "sha1:$argon2id$v=19$m=65536,t=3,p=1$QTNJa2w4U0hQb2VSc1RDNQ$0Tj2i2Lq5+z9b64K+G0j/7hJGeu9GzYJ0KtfXQU+HH0"
 	credentialsQuery  = `^SELECT id, type, premdays, lastday, password FROM accounts WHERE email = \? OR name = \? ORDER BY email = \? DESC, id$`
+	widthQuery        = `^SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema\.COLUMNS WHERE TABLE_SCHEMA = DATABASE\(\) AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'password'$`
 	upgradeQuery      = `^UPDATE accounts SET password = \? WHERE id = \? AND password = \? AND \? <= \(SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema\.COLUMNS WHERE TABLE_SCHEMA = DATABASE\(\) AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'password'\)$`
 )
 
@@ -53,6 +54,11 @@ func passwordFixture(t *testing.T, stored ...string) (*sql.DB, sqlmock.Sqlmock) 
 		WithArgs(fixtureIdentifier, fixtureIdentifier, fixtureIdentifier).
 		WillReturnRows(credentialRows(stored...)).RowsWillBeClosed()
 	return db, mock
+}
+
+// expectColumnWidth answers the width check which precedes the hashing of an upgrade.
+func expectColumnWidth(mock sqlmock.Sqlmock, width int64) {
+	mock.ExpectQuery(widthQuery).WillReturnRows(sqlmock.NewRows([]string{"CHARACTER_MAXIMUM_LENGTH"}).AddRow(width))
 }
 
 // forbidUpgrade must be paired with assertNoUpgrade. A statement the mock does not expect only returns an error,
@@ -140,6 +146,7 @@ func TestLoadAccountUpgradesOlderValuesAfterAMatch(t *testing.T) {
 	for name, stored := range map[string]string{"sha1": fixtureSHA1, "wrapped": fixtureWrapped} {
 		t.Run(name, func(t *testing.T) {
 			db, mock := passwordFixture(t, stored)
+			expectColumnWidth(mock, 255)
 			mock.ExpectExec(upgradeQuery).WithArgs(currentArgon2id{}, uint32(40), stored, passwords.MinColumnLength).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -163,6 +170,7 @@ func TestLoadAccountKeepsACurrentValue(t *testing.T) {
 
 func TestLoadAccountSucceedsWhenTheUpgradeFails(t *testing.T) {
 	db, mock := passwordFixture(t, fixtureSHA1)
+	expectColumnWidth(mock, 255)
 	mock.ExpectExec(upgradeQuery).WithArgs(currentArgon2id{}, uint32(40), fixtureSHA1, passwords.MinColumnLength).
 		WillReturnError(errors.New("UPDATE command denied"))
 
@@ -171,6 +179,18 @@ func TestLoadAccountSucceedsWhenTheUpgradeFails(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint32(40), acc.ID)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestLoadAccountSkipsTheHashWhenTheColumnIsTooNarrow(t *testing.T) {
+	db, mock := passwordFixture(t, fixtureSHA1)
+	expectColumnWidth(mock, 40)
+	forbidUpgrade(mock)
+
+	acc, err := login(db, fixturePassword, passwords.NewHasher(1, true))
+
+	require.NoError(t, err)
+	assert.Equal(t, uint32(40), acc.ID)
+	assertNoUpgrade(t, mock)
 }
 
 func TestLoadAccountChecksEveryAccountWithTheIdentifier(t *testing.T) {
@@ -212,7 +232,7 @@ func TestLoadAccountBoundsTheHashingOfOneRequest(t *testing.T) {
 
 	// Beyond the bound an Argon2id value is not computed, even when it would match.
 	db, mock := passwordFixture(t, append(append([]string{}, stored...), fixtureArgon2id)...)
-	_, err := login(db, "another-password", nil)
+	_, err := login(db, fixturePassword, nil)
 	assertInvalidCredentials(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 

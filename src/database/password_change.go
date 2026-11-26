@@ -48,6 +48,19 @@ func setPasswordChangeMode(mode passwordChangeMode) {
 	passwordChange.Unlock()
 }
 
+// PasswordChangeRequiredState names the current mode for the startup log: "on", "off" or "pending" (the lookup failed
+// and is repeated at the next login, which is refused until it succeeds).
+func PasswordChangeRequiredState() string {
+	switch currentPasswordChangeMode() {
+	case passwordChangeOn:
+		return "on"
+	case passwordChangePending:
+		return "pending"
+	default:
+		return "off"
+	}
+}
+
 // DetectPasswordChangeRequired looks once for accounts.password_change_required in the current schema. Databases
 // without the column keep the feature off. When the lookup itself fails the feature is retried at the next login
 // instead of being silently left off. It returns whether verified accounts are going to be checked.

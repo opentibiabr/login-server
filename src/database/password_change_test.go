@@ -174,3 +174,13 @@ func TestAPendingDetectionThatFailsAgainRefusesTheLogin(t *testing.T) {
 	assert.Nil(t, acc)
 	assert.Equal(t, passwordChangePending, currentPasswordChangeMode())
 }
+
+func TestPasswordChangeRequiredStateNamesEveryMode(t *testing.T) {
+	defer setPasswordChangeMode(passwordChangeOff)
+	for mode, want := range map[passwordChangeMode]string{passwordChangeOff: "off", passwordChangeOn: "on", passwordChangePending: "pending"} {
+		setPasswordChangeMode(mode)
+		if got := PasswordChangeRequiredState(); got != want {
+			t.Fatalf("mode %d: got %q, want %q", mode, got, want)
+		}
+	}
+}

@@ -23,9 +23,12 @@ const defaultAntiCheatProtection = false
 func LoadWorldsFromMessage(worldsMsg []*login_proto_messages.World) []World {
 	var worlds []World
 
+	// The gRPC world message carries no PvP type: it comes from the configuration, like the other world defaults.
+	pvpType := configs.GetServerPvpType()
 	for _, worldMsg := range worldsMsg {
 		world := *FromProtoConvertor(worldMsg, &World{}).(*World)
 		world.AntiCheatProtection = defaultAntiCheatProtection
+		world.PvpType = pvpType
 		worlds = append(worlds, world)
 	}
 

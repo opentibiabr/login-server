@@ -119,6 +119,9 @@ func Test_buildErrorPayloadFromMessage(t *testing.T) {
 }
 
 func Test_buildPayloadFromMessage(t *testing.T) {
+	// The expected world is open PvP (0) whatever the environment running the tests configures.
+	t.Setenv("SERVER_PATH", "")
+	t.Setenv("SERVER_PVP_TYPE", "")
 	request := models.RequestPayload{
 		DeviceCookie: "device-cookie",
 		Email:        "player@example.invalid",

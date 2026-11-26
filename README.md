@@ -55,6 +55,7 @@ You can also download our docker image and apply the environment variables to yo
 |`AUTHENTICATOR_ENCRYPTION_KEY`|`base64-encoded 32-byte AES key shared with the account website; required at login-server startup`|
 |`SERVER_IP`          | `game server IP address`             |
 |`SERVER_LOCATION`    | `game server location`               |
+|`SERVER_PVP_TYPE`    | world PvP type in the world list (`pvptype`): a `worldType` name (`retro-pvp`, `pvp`, `no-pvp`, `pvp-enforced`, `retro-pvp-enforced`, `expert-pvp`) or a client code 0 to 4. Unset: `worldType` from the `config.lua` of `SERVER_PATH`; without either, or unknown, open PvP |
 |`SERVER_NAME`        | `game server name; the official client sends this exact value plus newline before the first world-login packet` |
 |`SERVER_PORT`        | `game server game port`              |
 |`VOCATIONS`          | `game vocation list csv (a,b,c)`     |

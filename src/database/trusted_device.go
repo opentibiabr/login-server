@@ -20,6 +20,9 @@ const (
 	trustedDeviceDuration   = 30 * 24 * time.Hour
 	trustedDeviceMaxCount   = 10
 	trustedDeviceNameLength = 80
+
+	// Accounts that never saved a device policy keep remembered devices open.
+	defaultGameDeviceMode = "open"
 )
 
 var trustedDeviceNow = time.Now
@@ -35,9 +38,33 @@ func lockGameDevicePolicy(ctx context.Context, tx *sql.Tx, accountID uint32) (st
 	var mode string
 	err := tx.QueryRowContext(ctx, `SELECT game_mode FROM account_device_policies WHERE account_id = ?`, accountID).Scan(&mode)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "open", nil
+		return defaultGameDeviceMode, nil
 	}
 	return mode, err
+}
+
+// GameDeviceEnrollmentAllowed reports whether a second-factor login of this
+// account may enroll a remembered game device, so the client can hide an option
+// that the owner locked or disabled. It authenticates the submitted credentials
+// again and answers only for a caller that already proved the password. The
+// read takes no lock: it is advice for the interface, and enrollment itself
+// still decides under the account lock.
+func (acc *Account) GameDeviceEnrollmentAllowed(ctx context.Context, db *sql.DB) (bool, error) {
+	if acc == nil || db == nil {
+		return false, errors.New("account or database connection is nil")
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := acc.Authenticate(db); err != nil {
+		return false, err
+	}
+	mode := defaultGameDeviceMode
+	err := db.QueryRowContext(ctx, `SELECT game_mode FROM account_device_policies WHERE account_id = ?`, acc.ID).Scan(&mode)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	return mode == "open", nil
 }
 
 func (acc *Account) RotateTrustedDevice(ctx context.Context, db *sql.DB, token string) (string, uint64, bool, error) {

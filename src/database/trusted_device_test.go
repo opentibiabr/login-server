@@ -2,11 +2,13 @@ package database
 
 import (
 	"context"
+	"crypto/sha1"
 	"crypto/sha256"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -372,4 +374,73 @@ func TestTrustedDeviceSessionCommitsOnlyWithCurrentGameCredential(t *testing.T) 
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+}
+
+func TestGameDeviceEnrollmentAllowedFollowsGamePolicy(t *testing.T) {
+	const authenticate = `SELECT id, type, premdays, lastday FROM accounts WHERE (email = ? OR name = ?) AND password = ?`
+	const policy = `SELECT game_mode FROM account_device_policies WHERE account_id = ?`
+	passwordHash := fmt.Sprintf("%x", sha1.Sum([]byte("secret")))
+	for _, tc := range []struct {
+		name      string
+		mode      string
+		policyErr error
+		allowed   bool
+	}{
+		{name: "open", mode: "open", allowed: true},
+		{name: "missing row defaults open", policyErr: sql.ErrNoRows, allowed: true},
+		{name: "locked", mode: "locked"},
+		{name: "disabled", mode: "disabled"},
+		{name: "unknown mode", mode: "unexpected"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, mock := newAuthenticatorMock(t)
+			mock.ExpectQuery(regexp.QuoteMeta(authenticate)).
+				WithArgs("user@example.com", "user@example.com", passwordHash).
+				WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(uint32(42), uint32(1), uint32(0), uint32(0)))
+			query := mock.ExpectQuery(regexp.QuoteMeta(policy)).WithArgs(uint32(42))
+			if tc.policyErr != nil {
+				query.WillReturnError(tc.policyErr)
+			} else {
+				query.WillReturnRows(sqlmock.NewRows([]string{"game_mode"}).AddRow(tc.mode))
+			}
+
+			allowed, err := (&Account{Email: "user@example.com", Password: "secret"}).GameDeviceEnrollmentAllowed(context.Background(), db)
+
+			require.NoError(t, err)
+			assert.Equal(t, tc.allowed, allowed)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestGameDeviceEnrollmentAllowedFailsClosedWithoutProvenCredentialsOrPolicy(t *testing.T) {
+	t.Run("wrong credentials", func(t *testing.T) {
+		db, mock := newAuthenticatorMock(t)
+		mock.ExpectQuery(`SELECT id, type, premdays, lastday FROM accounts`).WillReturnError(sql.ErrNoRows)
+
+		allowed, err := (&Account{Email: "user@example.com", Password: "wrong"}).GameDeviceEnrollmentAllowed(context.Background(), db)
+
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.False(t, allowed)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+	t.Run("policy storage failure", func(t *testing.T) {
+		db, mock := newAuthenticatorMock(t)
+		failure := errors.New("policy storage unavailable")
+		mock.ExpectQuery(`SELECT id, type, premdays, lastday FROM accounts`).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "type", "premdays", "lastday"}).AddRow(uint32(42), uint32(1), uint32(0), uint32(0)))
+		mock.ExpectQuery(`SELECT game_mode FROM account_device_policies`).WillReturnError(failure)
+
+		allowed, err := (&Account{Email: "user@example.com", Password: "secret"}).GameDeviceEnrollmentAllowed(context.Background(), db)
+
+		assert.ErrorIs(t, err, failure)
+		assert.False(t, allowed)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+	t.Run("missing database", func(t *testing.T) {
+		allowed, err := (&Account{Email: "user@example.com", Password: "secret"}).GameDeviceEnrollmentAllowed(context.Background(), nil)
+
+		assert.Error(t, err)
+		assert.False(t, allowed)
+	})
 }

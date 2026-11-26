@@ -113,7 +113,9 @@ func (acc *Account) Authenticate(ctx context.Context, db *sql.DB, hasher *passwo
 		if err := acc.ensurePasswordChangeNotRequired(ctx, db); err != nil {
 			return err
 		}
-		if hasher.RehashEnabled() && passwords.NeedsRehash(candidate.password) {
+		// An upgraded value is limited like every Argon2id value: replacing one that sits beyond the bound would make the
+		// account unverifiable through this identifier, so it keeps its format.
+		if hasher.RehashEnabled() && passwords.NeedsRehash(candidate.password) && computedArgon2id < maxArgon2idPerLogin {
 			if err := upgradeStoredPassword(ctx, db, hasher, candidate, acc.Password); err != nil {
 				logger.Warn(fmt.Sprintf("Account %d kept its previous password format: %v", candidate.id, err))
 			}

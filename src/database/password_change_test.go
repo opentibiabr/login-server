@@ -81,6 +81,7 @@ func TestUnflaggedAccountLogsInAndIsUpgraded(t *testing.T) {
 	withPasswordChangeMode(t, passwordChangeOn)
 	db, mock := passwordFixture(t, fixtureSHA1)
 	mock.ExpectQuery(flagQuery).WithArgs(uint32(40)).WillReturnRows(flagRows(0))
+	expectColumnWidth(mock, 255)
 	mock.ExpectExec(upgradeQuery).WithArgs(currentArgon2id{}, uint32(40), fixtureSHA1, passwords.MinColumnLength).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -143,7 +144,7 @@ func TestDetectionTurnsTheFeatureOnOnlyWhenTheColumnExists(t *testing.T) {
 			t.Cleanup(func() { db.Close() })
 			mock.ExpectQuery(detectQuery).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(test.count))
 
-			assert.Equal(t, test.want, DetectPasswordChangeRequired(nil, db))
+			assert.Equal(t, test.want, DetectPasswordChangeRequired(context.Background(), db))
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

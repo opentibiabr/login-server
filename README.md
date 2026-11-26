@@ -84,7 +84,7 @@ seconds, including slow bodies that begin while capacity is available.
 
 ## Two-factor authentication
 
-The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher must enroll before they can log in; enrollment remains optional for other accounts.
+The login endpoint accepts an optional six-digit `token` field. Accounts with a row in `account_authenticators` must provide a valid RFC 6238 TOTP code. Account types 4 and higher, and accounts that own a character that is not deleted with `players.group_id` 4 or higher, must enroll before they can log in; enrollment remains optional for other accounts. For an account without an authenticator, a failure to read its characters' groups refuses the login.
 
 The account website owns enrollment and stores the secret only after the player confirms the first code. The website and login server must use the same `AUTHENTICATOR_ENCRYPTION_KEY`. Generate it once with `openssl rand -base64 32`, store it outside the database, and do not rotate it without re-encrypting enrolled secrets.
 

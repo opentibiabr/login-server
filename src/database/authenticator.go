@@ -14,6 +14,8 @@ import (
 const (
 	authenticatorAttemptLimit = uint32(5)
 	authenticatorMaxLock      = 5 * time.Minute
+	// Player groups from gamemaster upwards (community manager, god) are staff characters.
+	playerGroupGameMaster = 4
 )
 
 type accountAuthenticator struct {
@@ -50,7 +52,17 @@ func (acc *Account) VerifyLoginSecondFactor(ctx context.Context, db *sql.DB, tok
 
 	entry, err := loadAccountAuthenticator(ctx, db, acc.ID)
 	if errors.Is(err, sql.ErrNoRows) {
-		if acc.IsAdmin() {
+		required := acc.IsAdmin()
+		if !required {
+			if required, err = acc.hasStaffCharacter(ctx, db); err != nil {
+				return verification, serviceerrors.LoginService(
+					serviceerrors.CodeAuthenticatorDataUnavailable,
+					"AUTHENTICATOR_DATA_UNAVAILABLE",
+					fmt.Errorf("failed to check the account for staff characters: %w", err),
+				)
+			}
+		}
+		if required {
 			return verification, serviceerrors.StaffAuthenticatorRequired()
 		}
 		return verification, nil
@@ -110,6 +122,18 @@ func (acc *Account) VerifyLoginSecondFactor(ctx context.Context, db *sql.DB, tok
 
 	verification.VerifiedWithAuthenticator = true
 	return verification, nil
+}
+
+// hasStaffCharacter reports whether the account owns a character, not deleted, in a staff group. The account type does
+// not follow the character group, so a regular account can still own a staff character.
+func (acc *Account) hasStaffCharacter(ctx context.Context, db *sql.DB) (bool, error) {
+	var found int
+	err := db.QueryRowContext(ctx, `SELECT 1 FROM players
+		WHERE account_id = ? AND deletion = 0 AND group_id >= ? LIMIT 1`, acc.ID, playerGroupGameMaster).Scan(&found)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func loadAccountAuthenticator(ctx context.Context, db *sql.DB, accountID uint32) (*accountAuthenticator, error) {

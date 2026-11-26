@@ -193,6 +193,22 @@ func TestLoadAccountSkipsTheHashWhenTheColumnIsTooNarrow(t *testing.T) {
 	assertNoUpgrade(t, mock)
 }
 
+func TestLoadAccountDoesNotUpgradeBeyondTheHashingBound(t *testing.T) {
+	const other = "$argon2id$v=19$m=1024,t=2,p=1$SUpqdExXMGlzelFod05DRA$mlCOM0J6Wf9zIek97/yk2RagJiE55cyBk3SHDeiNRZw"
+	stored := make([]string, maxArgon2idPerLogin)
+	for i := range stored {
+		stored[i] = other
+	}
+	db, mock := passwordFixture(t, append(stored, fixtureSHA1)...)
+	forbidUpgrade(mock)
+
+	acc, err := login(db, fixturePassword, passwords.NewHasher(1, true))
+
+	require.NoError(t, err)
+	assert.Equal(t, uint32(40+maxArgon2idPerLogin), acc.ID)
+	assertNoUpgrade(t, mock)
+}
+
 func TestLoadAccountChecksEveryAccountWithTheIdentifier(t *testing.T) {
 	stored := make([]string, 20)
 	for i := range stored {

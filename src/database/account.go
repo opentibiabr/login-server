@@ -109,6 +109,10 @@ func (acc *Account) Authenticate(ctx context.Context, db *sql.DB, hasher *passwo
 		}
 
 		acc.ID, acc.Type, acc.PremDays, acc.LastDay = candidate.id, candidate.accountType, candidate.premDays, candidate.lastDay
+		// Only a correct password reveals the flag, and nothing is rewritten for a flagged account.
+		if err := acc.ensurePasswordChangeNotRequired(ctx, db); err != nil {
+			return err
+		}
 		// An upgraded value is limited like every Argon2id value: replacing one that sits beyond the bound would make the
 		// account unverifiable through this identifier, so it keeps its format.
 		if hasher.RehashEnabled() && passwords.NeedsRehash(candidate.password) && computedArgon2id < maxArgon2idPerLogin {

@@ -17,3 +17,15 @@ func TestWithHintKeepsMessageImmutable(t *testing.T) {
 	assert.Equal(t, "create the table", withHint.Hint)
 	assert.Equal(t, "Login service error. Please contact support. Error: SESSION_STORAGE_UNAVAILABLE (LS-2004). Admin hint: create the table", MessageWithHint(withHint))
 }
+
+func TestPasswordChangeRequiredUsesTheConfiguredMessage(t *testing.T) {
+	t.Cleanup(func() { SetPasswordChangeRequiredMessage("") })
+
+	err := PasswordChangeRequired()
+	assert.Equal(t, CodePasswordChangeRequired, err.Code)
+	assert.Equal(t, "PASSWORD_CHANGE_REQUIRED", err.Name)
+	assert.Equal(t, DefaultPasswordChangeRequiredMessage, err.Message)
+
+	SetPasswordChangeRequiredMessage("Change it on the site.")
+	assert.Equal(t, "Change it on the site.", PasswordChangeRequired().Message)
+}

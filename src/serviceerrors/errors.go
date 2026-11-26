@@ -15,6 +15,7 @@ const (
 	CodeInvalidCredentials                = 3
 	CodeAuthenticatorRequired             = 6
 	CodeStaffAuthenticatorRequired        = 7
+	CodePasswordChangeRequired            = 8
 	CodeDatabaseUnavailable               = 2001
 	CodeAccountDataUnavailable            = 2002
 	CodeCharacterListLoadFailed           = 2003
@@ -31,6 +32,20 @@ const (
 )
 
 const invalidCredentialsMessage = "Account email or password is not correct."
+
+// DefaultPasswordChangeRequiredMessage is shown to accounts flagged with password_change_required.
+const DefaultPasswordChangeRequiredMessage = "You must change your account password on the website before you can play."
+
+var passwordChangeRequiredMessage = DefaultPasswordChangeRequiredMessage
+
+// SetPasswordChangeRequiredMessage overrides the message of PasswordChangeRequired; an empty value restores the default.
+// Call it at startup, before logins are served.
+func SetPasswordChangeRequiredMessage(message string) {
+	if message == "" {
+		message = DefaultPasswordChangeRequiredMessage
+	}
+	passwordChangeRequiredMessage = message
+}
 
 type PublicError struct {
 	Code    int
@@ -79,6 +94,10 @@ func AuthenticatorRequired() *PublicError {
 
 func StaffAuthenticatorRequired() *PublicError {
 	return New(CodeStaffAuthenticatorRequired, "STAFF_AUTHENTICATOR_REQUIRED", "Staff accounts must enable two-factor authentication on the account website before logging in.", nil)
+}
+
+func PasswordChangeRequired() *PublicError {
+	return New(CodePasswordChangeRequired, "PASSWORD_CHANGE_REQUIRED", passwordChangeRequiredMessage, nil)
 }
 
 func LoginService(code int, name string, cause error) *PublicError {

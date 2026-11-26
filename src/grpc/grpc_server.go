@@ -1,6 +1,7 @@
 package grpc_login_server
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"github.com/opentibiabr/login-server/src/logger"
 	"github.com/opentibiabr/login-server/src/passwords"
 	"github.com/opentibiabr/login-server/src/server"
+	"github.com/opentibiabr/login-server/src/serviceerrors"
 	"google.golang.org/grpc"
 )
 
@@ -31,6 +33,9 @@ func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 	ls.AuthenticatorEncryptionKey = gConfigs.LoginServerConfigs.Authenticator.EncryptionKey
 	rehash, concurrency := configs.GetLoginPasswordRehash(), configs.GetLoginPasswordHashConcurrency()
 	ls.Passwords = passwords.NewHasher(concurrency, rehash)
+	serviceerrors.SetPasswordChangeRequiredMessage(configs.GetLoginPasswordChangeMessage())
+	database.DetectPasswordChangeRequired(context.Background(), ls.DB)
+	logger.Info(fmt.Sprintf("Account password_change_required check: %s", database.PasswordChangeRequiredState()))
 	logger.Info(fmt.Sprintf("Account passwords: upgrade after login %t, %d simultaneous Argon2id computations", rehash, concurrency))
 
 	return &ls

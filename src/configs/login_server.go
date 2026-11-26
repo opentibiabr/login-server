@@ -17,6 +17,7 @@ const EnvLoginGrpcPortKey = "LOGIN_GRPC_PORT"
 const EnvLoginTrustedProxiesKey = "LOGIN_TRUSTED_PROXIES"
 const EnvLoginFreePremiumKey = "LOGIN_FREE_PREMIUM"
 const EnvLoginPasswordRehashKey = "LOGIN_PASSWORD_REHASH"
+const EnvLoginPasswordChangeMessageKey = "LOGIN_PASSWORD_CHANGE_MESSAGE"
 const EnvLoginPasswordHashConcurrencyKey = "LOGIN_PASSWORD_HASH_CONCURRENCY"
 
 const maxPasswordHashConcurrency = 64
@@ -97,6 +98,12 @@ func GetLoginPasswordHashConcurrency() int {
 		return passwords.DefaultConcurrency
 	}
 	return value
+}
+
+// GetLoginPasswordChangeMessage is the text shown to accounts that must change their password
+// (LOGIN_PASSWORD_CHANGE_MESSAGE). Empty means the default message.
+func GetLoginPasswordChangeMessage() string {
+	return strings.TrimSpace(GetEnvStr(EnvLoginPasswordChangeMessageKey, ""))
 }
 
 func getAuthenticatorConfigs() AuthenticatorConfigs {

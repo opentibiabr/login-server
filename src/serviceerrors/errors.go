@@ -25,6 +25,7 @@ const (
 	CodeUnsupportedRequestType            = 3002
 	CodeAuthenticatorConfigurationInvalid = 3003
 	CodeSessionAuthenticationRequired     = 3004
+	CodePasswordVerificationBusy          = 3005
 	CodeEventScheduleUnavailable          = 4001
 	CodeBoostedDataUnavailable            = 4002
 )

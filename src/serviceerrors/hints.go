@@ -3,7 +3,9 @@ package serviceerrors
 func AdminHint(name string) string {
 	switch name {
 	case "INVALID_CREDENTIALS":
-		return "Verify the account email/name, password and accounts.password SHA-1 hash; reset the account password if the record should be valid."
+		return "Verify the account email/name, password and accounts.password value (Argon2id, wrapped SHA-1 or SHA-1); reset the account password if the record should be valid."
+	case "PASSWORD_VERIFICATION_BUSY":
+		return "Password hashing slots stayed busy. Check for a burst of login attempts and consider raising LOGIN_PASSWORD_HASH_CONCURRENCY if the host has memory for it."
 	case "SERVER_NAME_MISMATCH":
 		return "Make SERVER_NAME in the login-server .env match serverName in Canary config.lua, then restart the login-server."
 	case "SERVER_CONFIG_INVALID":

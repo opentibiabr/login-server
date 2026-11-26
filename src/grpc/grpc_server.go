@@ -9,6 +9,8 @@ import (
 	"github.com/opentibiabr/login-server/src/configs"
 	"github.com/opentibiabr/login-server/src/database"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/passwords"
 	"github.com/opentibiabr/login-server/src/server"
 	"google.golang.org/grpc"
 )
@@ -16,6 +18,8 @@ import (
 type GrpcServer struct {
 	DB                         *sql.DB
 	AuthenticatorEncryptionKey string
+	// Passwords verifies account passwords; nil uses the defaults, which never rewrite a stored value.
+	Passwords *passwords.Hasher
 	login_proto_messages.LoginServiceServer
 	server.ServerInterface
 }
@@ -25,6 +29,9 @@ func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
 
 	ls.DB = database.PullConnection(gConfigs)
 	ls.AuthenticatorEncryptionKey = gConfigs.LoginServerConfigs.Authenticator.EncryptionKey
+	rehash, concurrency := configs.GetLoginPasswordRehash(), configs.GetLoginPasswordHashConcurrency()
+	ls.Passwords = passwords.NewHasher(concurrency, rehash)
+	logger.Info(fmt.Sprintf("Account passwords: upgrade after login %t, %d simultaneous Argon2id computations", rehash, concurrency))
 
 	return &ls
 }

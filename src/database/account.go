@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha1"
 	"crypto/sha256"
 	"database/sql"
 	"database/sql/driver"
@@ -15,6 +14,8 @@ import (
 
 	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/opentibiabr/login-server/src/grpc/login_proto_messages"
+	"github.com/opentibiabr/login-server/src/logger"
+	"github.com/opentibiabr/login-server/src/passwords"
 	"github.com/opentibiabr/login-server/src/serviceerrors"
 )
 
@@ -33,9 +34,35 @@ const secondsInADay = 24 * 60 * 60
 const sessionDuration = 24 * time.Hour
 const sessionPersistenceTimeout = 3 * time.Second
 
+const passwordUpgradeTimeout = 3 * time.Second
+
+// maxArgon2idPerLogin bounds the hashing one request can ask for when many accounts share an identifier. Legacy
+// values cost next to nothing and are all checked.
+const maxArgon2idPerLogin = 8
+
+// passwordCheckTimeout bounds how long a login waits for a hashing slot.
+var passwordCheckTimeout = 10 * time.Second
+
+// Every account the identifier names is a candidate: the schema does not require unique emails.
+const selectCredentialsStatement = "SELECT id, type, premdays, lastday, password FROM accounts WHERE email = ? OR name = ? ORDER BY email = ? DESC, id"
+
+// passwordColumnWidthStatement reads the width of accounts.password. It is checked before hashing so a narrow column
+// costs one cheap query instead of an Argon2id computation that could never be stored.
+const passwordColumnWidthStatement = "SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'password'"
+
+// The column width stays part of the condition as the final guard: without strict SQL mode a narrow column would
+// silently cut the new value and lock the account out.
+const upgradePasswordStatement = "UPDATE accounts SET password = ? WHERE id = ? AND password = ? AND ? <= " +
+	"(" + passwordColumnWidthStatement + ")"
+
+var defaultPasswordHasher = passwords.NewHasher(passwords.DefaultConcurrency, false)
+
 var ErrAccountSessionStorageUnavailable = errors.New("account session persistence unavailable")
 
-func (acc *Account) Authenticate(db *sql.DB) error {
+// Authenticate finds the account whose email or name is acc.Email and whose stored password matches acc.Password.
+// It returns sql.ErrNoRows when there is none. With rehashing enabled, a matching value in an older format is
+// replaced; failing to replace it does not fail the login.
+func (acc *Account) Authenticate(ctx context.Context, db *sql.DB, hasher *passwords.Hasher) error {
 	if db == nil {
 		return serviceerrors.LoginService(
 			serviceerrors.CodeDatabaseUnavailable,
@@ -43,20 +70,141 @@ func (acc *Account) Authenticate(db *sql.DB) error {
 			errors.New("database connection is nil"),
 		)
 	}
-
-	h := sha1.New()
-	h.Write([]byte(acc.Password))
-
-	p := h.Sum(nil)
-	passwordHash := fmt.Sprintf("%x", p)
-
-	statement := "SELECT id, type, premdays, lastday FROM accounts WHERE (email = ? OR name = ?) AND password = ?"
-
-	err := db.QueryRow(statement, acc.Email, acc.Email, passwordHash).Scan(&acc.ID, &acc.Type, &acc.PremDays, &acc.LastDay)
+	if hasher == nil {
+		hasher = defaultPasswordHasher
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	// A blank identifier would name every account without an e-mail address; databases ignore trailing spaces.
+	if strings.TrimSpace(acc.Email) == "" {
+		return sql.ErrNoRows
+	}
+	candidates, unreadable, err := loadCredentials(ctx, db, acc.Email)
 	if err != nil {
 		return err
 	}
+	checkCtx, cancel := context.WithTimeout(ctx, passwordCheckTimeout)
+	defer cancel()
 
+	computedArgon2id := 0
+	for _, candidate := range candidates {
+		usesArgon2id := passwords.IsArgon2id(candidate.password)
+		if usesArgon2id && computedArgon2id == maxArgon2idPerLogin {
+			continue
+		}
+		matches, err := hasher.Verify(checkCtx, acc.Password, candidate.password)
+		if errors.Is(err, passwords.ErrBusy) {
+			return busyError(err)
+		}
+		if usesArgon2id && err == nil {
+			computedArgon2id++
+		}
+		if err != nil {
+			logger.Warn(fmt.Sprintf("Account %d has an unusable stored password: %v", candidate.id, err))
+			continue
+		}
+		if !matches {
+			continue
+		}
+
+		acc.ID, acc.Type, acc.PremDays, acc.LastDay = candidate.id, candidate.accountType, candidate.premDays, candidate.lastDay
+		// An upgraded value is limited like every Argon2id value: replacing one that sits beyond the bound would make the
+		// account unverifiable through this identifier, so it keeps its format.
+		if hasher.RehashEnabled() && passwords.NeedsRehash(candidate.password) && computedArgon2id < maxArgon2idPerLogin {
+			if err := upgradeStoredPassword(ctx, db, hasher, candidate, acc.Password); err != nil {
+				logger.Warn(fmt.Sprintf("Account %d kept its previous password format: %v", candidate.id, err))
+			}
+		}
+		return nil
+	}
+
+	if unreadable != nil {
+		return unreadable
+	}
+	// While values are being upgraded, an unknown account and a wrong password on a legacy value take as long as a
+	// wrong password on an Argon2id value, and are refused as busy under the same conditions.
+	if computedArgon2id == 0 && hasher.RehashEnabled() {
+		if err := hasher.Waste(checkCtx, acc.Password); errors.Is(err, passwords.ErrBusy) {
+			return busyError(err)
+		}
+	}
+	return sql.ErrNoRows
+}
+
+func busyError(cause error) error {
+	return serviceerrors.LoginService(serviceerrors.CodePasswordVerificationBusy, "PASSWORD_VERIFICATION_BUSY", cause)
+}
+
+type storedCredentials struct {
+	id          uint32
+	accountType uint32
+	premDays    uint32
+	lastDay     uint32
+	password    string
+}
+
+// loadCredentials reads every candidate before any hashing, so no database connection is held while hashing. A row
+// which cannot be read does not hide the others; its error is returned in unreadable. Rows without a password are
+// no candidates.
+func loadCredentials(ctx context.Context, db *sql.DB, identifier string) (candidates []storedCredentials, unreadable error, err error) {
+	rows, err := db.QueryContext(ctx, selectCredentialsStatement, identifier, identifier, identifier)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var candidate storedCredentials
+		var password sql.NullString
+		if scanErr := rows.Scan(&candidate.id, &candidate.accountType, &candidate.premDays, &candidate.lastDay, &password); scanErr != nil {
+			unreadable = scanErr
+			continue
+		}
+		if !password.Valid {
+			continue
+		}
+		candidate.password = password.String
+		candidates = append(candidates, candidate)
+	}
+	return candidates, unreadable, rows.Err()
+}
+
+// upgradeStoredPassword replaces the value that has just been verified. The previous value is part of the condition,
+// so a password changed in the meantime is never overwritten.
+func upgradeStoredPassword(ctx context.Context, db *sql.DB, hasher *passwords.Hasher, current storedCredentials, password string) error {
+	upgradeCtx, cancel := context.WithTimeout(ctx, passwordUpgradeTimeout)
+	defer cancel()
+
+	if err := checkPasswordColumnWidth(upgradeCtx, db); err != nil {
+		return err
+	}
+	upgraded, err := hasher.Hash(upgradeCtx, password)
+	if err != nil {
+		return err
+	}
+	result, err := db.ExecContext(upgradeCtx, upgradePasswordStatement, upgraded, current.id, current.password, passwords.MinColumnLength)
+	if err != nil {
+		return err
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if changed != 1 {
+		return fmt.Errorf("not replaced: the value changed meanwhile or accounts.password holds fewer than %d characters", passwords.MinColumnLength)
+	}
+	return nil
+}
+
+func checkPasswordColumnWidth(ctx context.Context, db *sql.DB) error {
+	var width sql.NullInt64
+	if err := db.QueryRowContext(ctx, passwordColumnWidthStatement).Scan(&width); err != nil {
+		return fmt.Errorf("reading the width of accounts.password: %w", err)
+	}
+	if !width.Valid || width.Int64 < passwords.MinColumnLength {
+		return fmt.Errorf("accounts.password holds fewer than %d characters; widen it, for example ALTER TABLE accounts MODIFY password VARCHAR(255) NOT NULL", passwords.MinColumnLength)
+	}
 	return nil
 }
 
@@ -173,9 +321,9 @@ func (acc *Account) PremiumStatus(now time.Time, freePremium bool) (bool, uint64
 	return false, 0
 }
 
-func LoadAccount(email string, password string, DB *sql.DB) (*Account, error) {
+func LoadAccount(ctx context.Context, email string, password string, DB *sql.DB, hasher *passwords.Hasher) (*Account, error) {
 	acc := Account{Email: email, Password: password}
-	if err := acc.Authenticate(DB); err != nil {
+	if err := acc.Authenticate(ctx, DB, hasher); err != nil {
 		return nil, classifyAuthenticationError(err)
 	}
 

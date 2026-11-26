@@ -23,7 +23,7 @@ func (ls *GrpcServer) Login(ctx context.Context, in *login_proto_messages.LoginR
 		return ls.loginLivestream(ctx, in.Password)
 	}
 
-	acc, err := database.LoadAccount(in.Email, in.Password, ls.DB)
+	acc, err := database.LoadAccount(ctx, in.Email, in.Password, ls.DB, ls.Passwords)
 	if err != nil {
 		return buildLoginErrorResponse(err, false), nil
 	}

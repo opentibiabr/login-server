@@ -105,6 +105,10 @@ func (acc *Account) Authenticate(ctx context.Context, db *sql.DB, hasher *passwo
 		}
 
 		acc.ID, acc.Type, acc.PremDays, acc.LastDay = candidate.id, candidate.accountType, candidate.premDays, candidate.lastDay
+		// Only a correct password reveals the flag, and nothing is rewritten for a flagged account.
+		if err := acc.ensurePasswordChangeNotRequired(ctx, db); err != nil {
+			return err
+		}
 		if hasher.RehashEnabled() && passwords.NeedsRehash(candidate.password) {
 			if err := upgradeStoredPassword(ctx, db, hasher, candidate, acc.Password); err != nil {
 				logger.Warn(fmt.Sprintf("Account %d kept its previous password format: %v", candidate.id, err))

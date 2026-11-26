@@ -612,3 +612,16 @@ func Test_loginHandlerRejectsPasswordAuthenticationMode(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, serviceerrors.CodeSessionAuthenticationRequired, payload.ErrorCode)
 }
+
+func TestBuildErrorPayloadsCarryThePasswordChangeRequiredError(t *testing.T) {
+	publicErr := serviceerrors.PasswordChangeRequired()
+
+	fromPublic := buildErrorPayloadFromPublicError(publicErr)
+	fromMessage := buildErrorPayloadFromMessage(&login_proto_messages.LoginResponse{
+		Error: &login_proto_messages.Error{Code: uint32(publicErr.Code), Message: publicErr.Message},
+	})
+
+	assert.Equal(t, serviceerrors.CodePasswordChangeRequired, fromPublic.ErrorCode)
+	assert.Equal(t, fromPublic, fromMessage)
+	assert.Equal(t, serviceerrors.DefaultPasswordChangeRequiredMessage, fromMessage.ErrorMessage)
+}

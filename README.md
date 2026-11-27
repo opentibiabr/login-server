@@ -48,6 +48,7 @@ You can also download our docker image and apply the environment variables to yo
 |`LOGIN_IP`           | `login ip address`                   |
 |`LOGIN_HTTP_PORT`    | `login http port`                    |
 |`LOGIN_GRPC_PORT`    | `login grpc port`                    |
+|`LOGIN_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxies allowed to supply `X-Forwarded-For` / `X-Real-IP` (and `X-Forwarded-Proto`). Empty by default: forwarded headers are ignored and the TCP peer address is used. Behind a proxy on the same host set `127.0.0.1`. The proxy must append the client address to `X-Forwarded-For` (nginx: `$proxy_add_x_forwarded_for`). An invalid entry discards the whole list. |
 |`LOGIN_FREE_PREMIUM` | `true` (or `1`, `t`, `True`: any value Go's `strconv.ParseBool` reads as true) shows an account without paid time as a free premium account in the client character list; use it when the game server runs with freePremium. Unset, empty or any other value shows it as a free account. An account with paid time (`accounts.lastday` in the future) shows its whole days left, rounded down and never less than one while any paid time is left|
 |`LOGIN_TRUSTED_PROXIES`|`comma-separated IP/CIDR allowlist of reverse proxies permitted to supply forwarding headers; empty by default`|
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
@@ -75,6 +76,8 @@ reading the JSON body. The capacity check does not consume quota; the selected
 class's final admission remains authoritative under concurrent requests. The HTTP
 server bounds header reads to five seconds and complete request reads to 30
 seconds, including slow bodies that begin while capacity is available.
+
+> **Behind a reverse proxy, set `LOGIN_TRUSTED_PROXIES`.** Forwarded client IP headers are no longer trusted by default. Without it, every request that arrives through a proxy is attributed to the proxy address, so all clients share a single rate limit bucket (`RATE_LIMITER_BURST` / `RATE_LIMITER_RATE`) and a burst of logins, such as every client reconnecting after a restart, is answered with 429. Trusting every peer, the old default, let a client choose its own address: gin returns the leftmost `X-Forwarded-For` entry, which the client controls, so `X-Forwarded-For: 9.9.9.9` arrives as `9.9.9.9, <real address>` and is rate limited as `9.9.9.9`. With the proxy listed, gin reads the header from the right and uses the address the proxy appended.
 
 **Tests**  
 `go test ./...`

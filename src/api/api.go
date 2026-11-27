@@ -51,7 +51,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	gin.SetMode(gin.ReleaseMode)
 
-	_api.Router = gin.New()
+	_api.Router = newRouter(gConfigs.LoginServerConfigs.Http.TrustedProxies)
 	_api.trustedProxies, err = parseTrustedProxySet(gConfigs.LoginServerConfigs.Http.TrustedProxies)
 	if err != nil {
 		logger.Error(fmt.Errorf("invalid %s configuration: %v", configs.EnvLoginTrustedProxiesKey, err))
